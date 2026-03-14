@@ -1,4 +1,4 @@
-package dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting;
+package dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.timing.BehaviorTimingConfig;
 import dev.breezes.settlements.application.config.constants.BehaviorConfigConstants;

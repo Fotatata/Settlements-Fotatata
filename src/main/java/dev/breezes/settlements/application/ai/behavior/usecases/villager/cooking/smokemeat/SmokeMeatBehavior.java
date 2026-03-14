@@ -1,4 +1,4 @@
-package dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting;
+package dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
@@ -24,7 +24,6 @@ import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.BaseContainerBlockEntityMixin;
 import dev.breezes.settlements.shared.util.RandomUtil;
-import lombok.Builder;
 import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
@@ -32,7 +31,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.LockCode;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
@@ -44,6 +44,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @CustomLog
 public class SmokeMeatBehavior extends StateMachineBehavior {
@@ -68,6 +69,8 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
     }
 
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
+    private final SmokeRecipeAvailableCondition smokeRecipeAvailableCondition;
+
     @Getter
     private final BehaviorDescriptor behaviorDescriptor;
 
@@ -87,7 +90,9 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.SMOKER));
+        this.smokeRecipeAvailableCondition = new SmokeRecipeAvailableCondition(RECIPES);
         this.preconditions.add(this.jobSiteBlockExistsCondition);
+        this.preconditions.add(this.smokeRecipeAvailableCondition);
 
         // Initialize variables
         this.smoker = null;
@@ -118,7 +123,13 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
         }
 
         this.smoker = this.jobSiteBlockExistsCondition.getJobSiteBlock().get();
-        this.currentRecipe = RandomUtil.choice(RECIPES);
+        List<SmokeMeatRecipe> validRecipes = this.smokeRecipeAvailableCondition.getValidRecipes();
+        if (validRecipes.isEmpty()) {
+            this.requestStop();
+            return;
+        }
+
+        this.currentRecipe = RandomUtil.choice(validRecipes);
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.smoker)));
 
         this.setSmokerLockState(true);
@@ -159,7 +170,12 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
                         return StepResult.complete();
                     }
 
-                    ctx.getInitiator().setHeldItem(this.currentRecipe.getInput().getDefaultInstance());
+                    BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
+                    if (!this.consumeRecipeInput(villager, this.currentRecipe)) {
+                        return StepResult.fail("SMOKE_MEAT_INPUT_CONSUME_FAILED");
+                    }
+
+                    ctx.getInitiator().setHeldItem(this.currentRecipe.createInputStack());
                     return StepResult.noOp();
                 })
                 .onEnd(ctx -> {
@@ -184,7 +200,10 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
                     }
 
                     this.setSmokerLitState(false);
-                    ctx.getInitiator().setHeldItem(this.currentRecipe.getOutput().getDefaultInstance());
+                    BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
+                    this.storeOrDropOutput(villager, this.currentRecipe);
+
+                    ctx.getInitiator().setHeldItem(this.currentRecipe.createOutputStack());
                     SoundRegistry.ITEM_POP_OUT.playGlobally(this.smoker.getLocation(true).add(0, 0.5, 0, false), SoundSource.BLOCKS);
                     return StepResult.noOp();
                 })
@@ -203,6 +222,32 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
                 .navigateStep(new NavigateToTargetStep(0.5f, 1))
                 .actionStep(new SequencedStep("SmokeMeatBehavior.sequence", List.of(setup, smoking, takeOut)))
                 .build();
+    }
+
+    private boolean consumeRecipeInput(@Nonnull BaseVillager villager,
+                                       @Nonnull SmokeMeatRecipe recipe) {
+        return villager.getSettlementsInventory().consume(recipe.getInput(), recipe.getInputCount()) == recipe.getInputCount();
+    }
+
+    private void storeOrDropOutput(@Nonnull BaseVillager villager,
+                                   @Nonnull SmokeMeatRecipe recipe) {
+        Optional<ItemStack> leftover = villager.getSettlementsInventory().addItem(recipe.createOutputStack());
+        leftover.ifPresent(stack -> this.dropItemNearSmoker(villager, stack));
+    }
+
+    private void dropItemNearSmoker(@Nonnull BaseVillager villager,
+                                    @Nonnull ItemStack stack) {
+        if (stack.isEmpty()) {
+            return;
+        }
+
+        Location dropLocation = this.smoker != null
+                ? this.smoker.getLocation(true).add(0, 0.5, 0, false)
+                : Location.fromEntity(villager, false);
+        Level level = villager.level();
+
+        ItemEntity itemEntity = new ItemEntity(level, dropLocation.getX(), dropLocation.getY(), dropLocation.getZ(), stack.copy());
+        level.addFreshEntity(itemEntity);
     }
 
     private void setSmokerLitState(boolean lit) {
@@ -244,16 +289,6 @@ public class SmokeMeatBehavior extends StateMachineBehavior {
 
         String lockKey = locked ? GeneralConfig.globalLockKey : "";
         lockableContainer.setLockKey(new LockCode(lockKey));
-    }
-
-    @Builder
-    @Getter
-    private static class SmokeMeatRecipe {
-
-        private final Item input;
-        private final Item output;
-        // TODO: when implementing inventory, we can add counts here
-
     }
 
 }

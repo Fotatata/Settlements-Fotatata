@@ -10,6 +10,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfBehaviorV2;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandBehavior;
@@ -18,8 +20,6 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.BlastOreBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.BlastOreConfig;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.SmokeMeatBehavior;
-import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.SmokeMeatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.ThrowPotionsBehavior;
