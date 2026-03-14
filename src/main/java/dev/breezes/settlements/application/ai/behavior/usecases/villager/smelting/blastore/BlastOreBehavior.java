@@ -1,4 +1,4 @@
-package dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting;
+package dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore;
 
 import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
@@ -24,7 +24,6 @@ import dev.breezes.settlements.infrastructure.config.annotations.GeneralConfig;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.mixins.BaseContainerBlockEntityMixin;
 import dev.breezes.settlements.shared.util.RandomUtil;
-import lombok.Builder;
 import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
@@ -32,7 +31,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.LockCode;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
@@ -44,6 +44,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @CustomLog
 public class BlastOreBehavior extends StateMachineBehavior {
@@ -73,6 +74,7 @@ public class BlastOreBehavior extends StateMachineBehavior {
     }
 
     private final JobSiteBlockExistsCondition<BaseVillager> jobSiteBlockExistsCondition;
+    private final BlastRecipeAvailableCondition blastRecipeAvailableCondition;
     @Getter
     private final BehaviorDescriptor behaviorDescriptor;
 
@@ -92,8 +94,10 @@ public class BlastOreBehavior extends StateMachineBehavior {
 
         // Create behavior preconditions
         this.jobSiteBlockExistsCondition = new JobSiteBlockExistsCondition<>(block -> block != null && block.is(Blocks.BLAST_FURNACE));
+        this.blastRecipeAvailableCondition = new BlastRecipeAvailableCondition(RECIPES);
         // TODO: we perhaps should check whether the furnace is currently in use?
         this.preconditions.add(this.jobSiteBlockExistsCondition);
+        this.preconditions.add(this.blastRecipeAvailableCondition);
 
         // Initialize variables
         this.blastFurnace = null;
@@ -123,7 +127,13 @@ public class BlastOreBehavior extends StateMachineBehavior {
             return;
         }
         this.blastFurnace = this.jobSiteBlockExistsCondition.getJobSiteBlock().get();
-        this.currentRecipe = RandomUtil.choice(RECIPES);
+        List<BlastOreRecipe> validRecipes = this.blastRecipeAvailableCondition.getValidRecipes();
+        if (validRecipes.isEmpty()) {
+            this.requestStop();
+            return;
+        }
+
+        this.currentRecipe = RandomUtil.choice(validRecipes);
 
         context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(this.blastFurnace)));
 
@@ -164,7 +174,13 @@ public class BlastOreBehavior extends StateMachineBehavior {
                     if (this.currentRecipe == null || this.blastFurnace == null) {
                         return StepResult.complete();
                     }
-                    ctx.getInitiator().setHeldItem(this.currentRecipe.getInput().getDefaultInstance());
+
+                    BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
+                    if (!this.consumeRecipeInput(villager, this.currentRecipe)) {
+                        return StepResult.fail("BLAST_ORE_INPUT_CONSUME_FAILED");
+                    }
+
+                    ctx.getInitiator().setHeldItem(this.currentRecipe.createInputStack());
                     return StepResult.noOp();
                 })
                 .onEnd(ctx -> {
@@ -189,7 +205,10 @@ public class BlastOreBehavior extends StateMachineBehavior {
                     }
 
                     this.setFurnaceLitState(false);
-                    ctx.getInitiator().setHeldItem(this.currentRecipe.getOutput().getDefaultInstance());
+                    BaseVillager villager = ctx.getInitiator().getMinecraftEntity();
+                    this.storeOrDropOutput(villager, this.currentRecipe);
+
+                    ctx.getInitiator().setHeldItem(this.currentRecipe.createOutputStack());
                     SoundRegistry.ITEM_POP_OUT.playGlobally(this.blastFurnace.getLocation(true).add(0, 0.5, 0, false), SoundSource.BLOCKS);
                     return StepResult.noOp();
                 })
@@ -208,6 +227,36 @@ public class BlastOreBehavior extends StateMachineBehavior {
                 .navigateStep(new NavigateToTargetStep(0.5f, 1))
                 .actionStep(new SequencedStep("BlastOreBehavior.sequence", List.of(setup, blasting, takeOut)))
                 .build();
+    }
+
+    private boolean consumeRecipeInput(@Nonnull BaseVillager villager,
+                                       @Nonnull BlastOreRecipe recipe) {
+        return villager.getSettlementsInventory().consume(recipe.getInput(), recipe.getInputCount()) == recipe.getInputCount();
+    }
+
+    private void storeOrDropOutput(@Nonnull BaseVillager villager,
+                                   @Nonnull BlastOreRecipe recipe) {
+        Optional<ItemStack> leftover = villager.getSettlementsInventory().addItem(recipe.createOutputStack());
+        leftover.ifPresent(stack -> this.dropItemNearBlastFurnace(villager, stack));
+    }
+
+    private void dropItemNearBlastFurnace(@Nonnull BaseVillager villager,
+                                          @Nonnull ItemStack stack) {
+        if (stack.isEmpty()) {
+            return;
+        }
+
+        Location dropLocation = this.blastFurnace != null
+                ? this.blastFurnace.getLocation(true).add(0, 0.5, 0, false)
+                : Location.fromEntity(villager, false);
+        Level level = villager.level();
+
+        ItemEntity itemEntity = new ItemEntity(level,
+                dropLocation.getX(),
+                dropLocation.getY(),
+                dropLocation.getZ(),
+                stack.copy());
+        level.addFreshEntity(itemEntity);
     }
 
     private void setFurnaceLitState(boolean lit) {
@@ -249,16 +298,6 @@ public class BlastOreBehavior extends StateMachineBehavior {
 
         String lockKey = locked ? GeneralConfig.globalLockKey : "";
         lockableContainer.setLockKey(new LockCode(lockKey));
-    }
-
-    @Builder
-    @Getter
-    private static class BlastOreRecipe {
-
-        private final Item input;
-        private final Item output;
-        // TODO: when implementing inventory, we can add counts here
-
     }
 
 }
