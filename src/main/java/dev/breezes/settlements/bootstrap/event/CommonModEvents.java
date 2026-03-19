@@ -1,8 +1,8 @@
 package dev.breezes.settlements.bootstrap.event;
 
+import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.SettlementsWolf;
-import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import lombok.CustomLog;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;

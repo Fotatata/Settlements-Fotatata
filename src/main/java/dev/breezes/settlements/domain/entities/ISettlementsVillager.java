@@ -9,6 +9,7 @@ import net.minecraft.world.entity.monster.*;
 import net.minecraft.world.item.ItemStack;
 
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
+import dev.breezes.settlements.application.ui.bubble.VillagerBubbleState;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -33,6 +34,9 @@ public interface ISettlementsVillager extends ISettlementsBrainEntity {
 
     // Navigation
     INavigationManager<BaseVillager> getNavigationManager();
+
+    // Bubble runtime state (server authoritative)
+    VillagerBubbleState getBubbleState();
 
     @Override
     BaseVillager getMinecraftEntity();

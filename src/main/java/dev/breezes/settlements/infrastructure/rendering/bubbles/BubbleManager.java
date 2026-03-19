@@ -1,76 +1,139 @@
 package dev.breezes.settlements.infrastructure.rendering.bubbles;
 
+import dev.breezes.settlements.application.ui.bubble.BubbleEntrySnapshot;
 import dev.breezes.settlements.infrastructure.rendering.bubbles.canvas.SpeechBubble;
+import dev.breezes.settlements.infrastructure.rendering.bubbles.registry.BubbleRegistry;
 import lombok.Builder;
 import lombok.CustomLog;
 import lombok.Getter;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.PriorityQueue;
 import java.util.UUID;
 
 @Getter
 @CustomLog
 public class BubbleManager {
 
-    private final PriorityQueue<BubblePriorityEntry> bubbleMaxHeap;
+    private static final double STACKED_BUBBLE_Y_OFFSET = 0.35D;
+
+    private final Map<UUID, BubbleViewEntry> bubblesById;
+    private long nextLocalSequenceNumber;
 
     public BubbleManager() {
-        this.bubbleMaxHeap = new PriorityQueue<>(Comparator.comparingInt(BubblePriorityEntry::getPriority).reversed());
+        this.bubblesById = new LinkedHashMap<>();
+        this.nextLocalSequenceNumber = 0L;
     }
 
     public Optional<SpeechBubble> getActiveBubble() {
-        if (this.bubbleMaxHeap.isEmpty()) {
+        List<BubbleViewEntry> orderedEntries = this.getOrderedEntries();
+        if (orderedEntries.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.ofNullable(this.bubbleMaxHeap.peek().getBubble());
+        return Optional.ofNullable(orderedEntries.getFirst().getBubble());
     }
 
     public void tick(double deltaTick) {
-        bubbleMaxHeap.removeIf(entry -> {
+        this.bubblesById.values().removeIf(entry -> {
             entry.getBubble().tick(deltaTick);
             return entry.getBubble().isExpired();
         });
     }
 
     public void render(@Nonnull RenderParameter parameter) {
-        // Only render the active bubble
-        this.getActiveBubble().ifPresent(bubble -> bubble.render(parameter));
-    }
-
-    public void addBubble(@Nonnull UUID bubbleId, @Nonnull SpeechBubble bubble, int priority) {
-        BubblePriorityEntry entry = BubblePriorityEntry.builder()
-                .priority(priority)
-                .bubbleId(bubbleId)
-                .bubble(bubble)
-                .build();
-        this.bubbleMaxHeap.add(entry);
-    }
-
-    public void removeBubble(@Nonnull UUID bubbleId) {
-        this.bubbleMaxHeap.stream()
-                .filter(entry -> entry.getBubbleId().equals(bubbleId))
-                .findAny()
-                .ifPresent(entry -> {
-                    entry.getBubble().setExpired();
-                    this.bubbleMaxHeap.remove(entry);
-                });
+        List<BubbleViewEntry> orderedEntries = this.getOrderedEntries();
+        for (int i = 0; i < orderedEntries.size(); i++) {
+            SpeechBubble bubble = orderedEntries.get(i).getBubble();
+            parameter.getPoseStack().pushPose();
+            parameter.getPoseStack().translate(0.0D, STACKED_BUBBLE_Y_OFFSET * i, 0.0D);
+            bubble.render(parameter);
+            parameter.getPoseStack().popPose();
+        }
     }
 
     public void removeAllBubbles() {
-        this.bubbleMaxHeap.forEach(entry -> entry.getBubble().setExpired());
-        this.bubbleMaxHeap.clear();
+        this.bubblesById.values().forEach(entry -> entry.getBubble().setExpired());
+        this.bubblesById.clear();
+    }
+
+    public void applySnapshot(@Nonnull List<BubbleEntrySnapshot> entries, long currentGameTime) {
+        Map<UUID, BubbleEntrySnapshot> incomingById = new LinkedHashMap<>();
+        for (BubbleEntrySnapshot entry : entries) {
+            incomingById.put(entry.bubbleId(), entry);
+        }
+
+        Iterator<Map.Entry<UUID, BubbleViewEntry>> iterator = this.bubblesById.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<UUID, BubbleViewEntry> localEntry = iterator.next();
+            if (incomingById.containsKey(localEntry.getKey())) {
+                continue;
+            }
+
+            localEntry.getValue().getBubble().setExpired();
+            iterator.remove();
+        }
+
+        for (Map.Entry<UUID, BubbleEntrySnapshot> incomingEntry : incomingById.entrySet()) {
+            BubbleEntrySnapshot snapshot = incomingEntry.getValue();
+            BubbleViewEntry existing = this.bubblesById.get(snapshot.bubbleId());
+
+            if (existing != null) {
+                this.bubblesById.put(snapshot.bubbleId(), BubbleViewEntry.builder()
+                        .bubbleId(snapshot.bubbleId())
+                        .bubble(existing.getBubble())
+                        .channelOrder(snapshot.channel().ordinal())
+                        .priority(snapshot.priority())
+                        .createdGameTime(snapshot.createdGameTime())
+                        .sequenceNumber(snapshot.sequenceNumber())
+                        .build());
+                continue;
+            }
+
+            this.createBubble(snapshot, currentGameTime)
+                    .ifPresent(bubble -> this.bubblesById.put(snapshot.bubbleId(), BubbleViewEntry.builder()
+                            .bubbleId(snapshot.bubbleId())
+                            .bubble(bubble)
+                            .channelOrder(snapshot.channel().ordinal())
+                            .priority(snapshot.priority())
+                            .createdGameTime(snapshot.createdGameTime())
+                            .sequenceNumber(snapshot.sequenceNumber())
+                            .build()));
+        }
+    }
+
+    protected Optional<SpeechBubble> createBubble(@Nonnull BubbleEntrySnapshot entry, long currentGameTime) {
+        return BubbleRegistry.getBubble(entry, currentGameTime);
+    }
+
+    private List<BubbleViewEntry> getOrderedEntries() {
+        List<BubbleViewEntry> entries = new ArrayList<>(this.bubblesById.values());
+        entries.sort(buildComparator());
+        return entries;
+    }
+
+    private static Comparator<BubbleViewEntry> buildComparator() {
+        return Comparator.comparingInt(BubbleViewEntry::getChannelOrder)
+                .thenComparing((left, right) -> Integer.compare(right.getPriority(), left.getPriority()))
+                .thenComparingLong(BubbleViewEntry::getCreatedGameTime)
+                .thenComparingLong(BubbleViewEntry::getSequenceNumber);
     }
 
     @Builder
     @Getter
-    private static class BubblePriorityEntry {
+    private static class BubbleViewEntry {
 
-        private int priority;
         private UUID bubbleId;
         private SpeechBubble bubble;
+        private int channelOrder;
+        private int priority;
+        private long createdGameTime;
+        private long sequenceNumber;
 
     }
 

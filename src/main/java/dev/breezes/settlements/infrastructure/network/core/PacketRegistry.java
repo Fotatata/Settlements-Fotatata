@@ -9,8 +9,7 @@ import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packe
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ServerBoundCloseBehaviorControllerPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ServerBoundHeartbeatBehaviorControllerPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ServerBoundOpenBehaviorControllerPacket;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.ClientBoundDisplayBubblePacket;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.ClientBoundRemoveBubblePacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -28,8 +27,7 @@ public class PacketRegistry {
         // Register with Minecraft registrar
         PayloadRegistrar registrar = event.registrar(SettlementsMod.MOD_ID).optional();
 
-        registerClient(registrar, ClientBoundDisplayBubblePacket.ID, ClientBoundDisplayBubblePacket.CODEC);
-        registerClient(registrar, ClientBoundRemoveBubblePacket.ID, ClientBoundRemoveBubblePacket.CODEC);
+        registerClient(registrar, ClientBoundBubbleSnapshotPacket.ID, ClientBoundBubbleSnapshotPacket.CODEC);
 
         registerServer(registrar, ServerBoundOpenBehaviorControllerPacket.ID, ServerBoundOpenBehaviorControllerPacket.CODEC);
         registerServer(registrar, ServerBoundCloseBehaviorControllerPacket.ID, ServerBoundCloseBehaviorControllerPacket.CODEC);

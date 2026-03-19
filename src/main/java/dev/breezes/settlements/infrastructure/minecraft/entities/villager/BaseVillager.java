@@ -3,20 +3,22 @@ package dev.breezes.settlements.infrastructure.minecraft.entities.villager;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
+import dev.breezes.settlements.application.ai.brain.CustomBehaviorPackages;
+import dev.breezes.settlements.application.ai.brain.DefaultBrain;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorBinding;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
+import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
+import dev.breezes.settlements.application.ui.bubble.VillagerBubbleState;
+import dev.breezes.settlements.domain.ai.brain.IBrain;
+import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
+import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
+import dev.breezes.settlements.domain.entities.Expertise;
+import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.genetics.GeneticsProfile;
 import dev.breezes.settlements.domain.inventory.GeneticInventoryProvider;
 import dev.breezes.settlements.domain.inventory.VillagerInventory;
-import dev.breezes.settlements.application.ai.brain.CustomBehaviorPackages;
 import dev.breezes.settlements.infrastructure.minecraft.ai.brain.CustomMemoryModuleType;
-import dev.breezes.settlements.application.ai.brain.DefaultBrain;
-import dev.breezes.settlements.domain.ai.brain.IBrain;
-import dev.breezes.settlements.domain.ai.memory.MemoryTypeRegistry;
-import dev.breezes.settlements.domain.entities.Expertise;
-import dev.breezes.settlements.domain.ai.navigation.INavigationManager;
 import dev.breezes.settlements.infrastructure.minecraft.navigation.VanillaMemoryNavigationManager;
-import dev.breezes.settlements.domain.entities.ISettlementsVillager;
+import dev.breezes.settlements.infrastructure.rendering.bubbles.BubbleManager;
 import lombok.CustomLog;
 import lombok.Getter;
 import net.minecraft.nbt.CompoundTag;
@@ -64,6 +66,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     private VillagerInventory settlementsInventory;
 
     private final BubbleManager bubbleManager;
+    private final VillagerBubbleState bubbleState;
     private volatile List<BehaviorBinding> trackedCustomBehaviors;
 
 
@@ -86,6 +89,7 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
         // Initialize custom inventory
         this.settlementsInventory = new GeneticInventoryProvider().provideDefault();
         this.bubbleManager = new BubbleManager();
+        this.bubbleState = new VillagerBubbleState();
         this.trackedCustomBehaviors = List.of();
     }
 
@@ -124,6 +128,10 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     @Override
     public void tick() {
         super.tick();
+
+        if (!this.level().isClientSide()) {
+            VillagerBubbleService.getInstance().tick(this, this.level().getGameTime());
+        }
 
         // if (this.level().isClientSide()) {
         //     this.spinAnimator.tickAnimations(this.tickCount);
@@ -234,6 +242,11 @@ public class BaseVillager extends Villager implements ISettlementsVillager {
     @Override
     public BubbleManager getBubbleManager() {
         return this.bubbleManager;
+    }
+
+    @Override
+    public VillagerBubbleState getBubbleState() {
+        return this.bubbleState;
     }
 
     @Override

@@ -4,7 +4,6 @@ import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehav
 import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
-import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.SpeechBubbleState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.items.ItemState;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetQueries;
 import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
@@ -16,6 +15,11 @@ import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedS
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
 import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
 import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
+import dev.breezes.settlements.application.ui.bubble.BubbleChannel;
+import dev.breezes.settlements.application.ui.bubble.BubbleCommand;
+import dev.breezes.settlements.application.ui.bubble.BubbleKind;
+import dev.breezes.settlements.application.ui.bubble.BubbleMessage;
+import dev.breezes.settlements.application.ui.bubble.VillagerBubbleService;
 import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
 import dev.breezes.settlements.domain.ai.conditions.NearbyShearableSheepExistsCondition;
 import dev.breezes.settlements.domain.entities.Expertise;
@@ -23,11 +27,6 @@ import dev.breezes.settlements.domain.entities.ISettlementsVillager;
 import dev.breezes.settlements.domain.time.Ticks;
 import dev.breezes.settlements.domain.world.location.Location;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.ClientBoundDisplayBubblePacket;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.ClientBoundRemoveBubblePacket;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.DisplayBubbleRequest;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.packet.RemoveBubbleRequest;
-import dev.breezes.settlements.infrastructure.rendering.bubbles.registry.BubbleType;
 import dev.breezes.settlements.shared.util.RandomUtil;
 import lombok.CustomLog;
 import lombok.Getter;
@@ -40,14 +39,12 @@ import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -55,6 +52,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @CustomLog
 public class ShearSheepBehaviorV2 extends StateMachineBehavior {
+
+    private static final String BUBBLE_OWNER_KEY = "behavior:shear_sheep";
+    private static final Ticks BUBBLE_TTL = Ticks.seconds(30);
 
     private static final Map<DyeColor, ItemLike> WOOL_COLOR_MAP = Map.ofEntries(
             Map.entry(DyeColor.WHITE, Items.WHITE_WOOL),
@@ -115,21 +115,16 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
                     log.behaviorStatus("Creating speech bubble");
                     ISettlementsVillager villager = context.getInitiator();
 
-                    UUID bubbleId = UUID.randomUUID();
-                    context.setState(BehaviorStateType.SPEECH_BUBBLE, SpeechBubbleState.of(bubbleId));
-
-                    DisplayBubbleRequest request = DisplayBubbleRequest.builder()
-                            .entityId(villager.getNetworkingId())
-                            .bubbleType(BubbleType.SHEAR_SHEEP)
-                            .bubbleId(bubbleId)
-                            .visibilityBlocks(20)
-                            // TODO: shorten this once packets are sent regularly
-                            .lifetimeTicks(Ticks.seconds(60).getTicksAsInt())
+                    BubbleMessage message = BubbleMessage.builder()
+                            .bubbleKind(BubbleKind.SHEAR_SHEEP)
+                            .priority(0)
+                            .ttl(BUBBLE_TTL)
+                            .sourceType("behavior")
+                            .extraData(Map.of())
                             .build();
-
-                    // Send the packet
-                    // TODO: we should send this packet regularly throughout the behavior (e.g. for players who teleported to nearby)
-                    PacketDistributor.sendToPlayersTrackingEntity(villager.getMinecraftEntity(), new ClientBoundDisplayBubblePacket(request));
+                    VillagerBubbleService.getInstance().applyCommand(villager,
+                            new BubbleCommand.Upsert(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY, message),
+                            villager.getMinecraftEntity().level().getGameTime());
                     return StepResult.noOp();
                 })
                 .initialStage(ShearStage.SHEAR_SHEEP)
@@ -137,16 +132,10 @@ public class ShearSheepBehaviorV2 extends StateMachineBehavior {
                 .nextStage(ShearStage.END)
                 .onEnd(context -> {
                     log.behaviorStatus("Removing speech bubble");
-                    context.getState(BehaviorStateType.SPEECH_BUBBLE, SpeechBubbleState.class)
-                            .map(SpeechBubbleState::getBubbleId)
-                            .ifPresent(uuid -> {
-                                ISettlementsVillager villager = context.getInitiator();
-                                RemoveBubbleRequest request = RemoveBubbleRequest.builder()
-                                        .entityId(villager.getNetworkingId())
-                                        .bubbleId(uuid)
-                                        .build();
-                                PacketDistributor.sendToPlayersTrackingEntity(villager.getMinecraftEntity(), new ClientBoundRemoveBubblePacket(request));
-                            });
+                    ISettlementsVillager villager = context.getInitiator();
+                    VillagerBubbleService.getInstance().applyCommand(villager,
+                            new BubbleCommand.RemoveByOwner(BubbleChannel.BEHAVIOR, BUBBLE_OWNER_KEY),
+                            villager.getMinecraftEntity().level().getGameTime());
                     return StepResult.noOp();
                 })
                 .build();
