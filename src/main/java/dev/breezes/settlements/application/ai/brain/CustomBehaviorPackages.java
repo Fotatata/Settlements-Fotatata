@@ -12,6 +12,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering.ButcherLivestockBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering.ButcherLivestockConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.milking.MilkCowConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneBehavior;
@@ -215,6 +217,8 @@ public final class CustomBehaviorPackages {
                     workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
             // customBehaviorWeightMap.put(new TameCatBehavior(), customGoalWeight);
             addTrackedChoiceBehavior(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.CHICKEN)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
+            addTrackedChoiceBehavior(new MilkCowBehavior(ConfigFactory.create(MilkCowConfig.class)),
                     workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
             // customBehaviorWeightMap.put(new MakeCakeBehavior(), customGoalWeight);
         } else if (profession == VillagerProfession.FISHERMAN) {
