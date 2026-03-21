@@ -102,7 +102,7 @@ public final class VillagerBubbleService {
                                  long gameTime) {
         Optional<BubbleEntry> existing = state.getByOwner(channel, ownerKey);
         if (existing.isPresent()) {
-            Ticks ttl = clampTtl(channel, message.ttl());
+            Ticks ttl = clampTtl(channel, message.getTtl());
             BubbleEntry updated = existing.get().withMessage(
                     message,
                     gameTime,
@@ -128,7 +128,7 @@ public final class VillagerBubbleService {
                                    String ownerKey,
                                    BubbleMessage message,
                                    long gameTime) {
-        Ticks ttlTicks = clampTtl(channel, message.ttl());
+        Ticks ttlTicks = clampTtl(channel, message.getTtl());
         return BubbleEntry.builder()
                 .bubbleId(UUID.randomUUID())
                 .channel(channel)
@@ -173,7 +173,7 @@ public final class VillagerBubbleService {
         Comparator<BubbleEntry> comparator = switch (policy) {
             case REPLACE_EXISTING, DROP_OLDEST -> Comparator.comparingLong(BubbleEntry::createdGameTime)
                     .thenComparingLong(BubbleEntry::sequenceNumber);
-            case DROP_LOWEST_PRIORITY -> Comparator.comparingInt((BubbleEntry entry) -> entry.message().priority())
+            case DROP_LOWEST_PRIORITY -> Comparator.comparingInt((BubbleEntry entry) -> entry.message().getPriority())
                     .thenComparingLong(BubbleEntry::createdGameTime)
                     .thenComparingLong(BubbleEntry::sequenceNumber);
             case REJECT_NEW -> null;
@@ -189,7 +189,8 @@ public final class VillagerBubbleService {
     private static Comparator<BubbleEntry> buildRenderComparator(EnumMap<BubbleChannel, ChannelPolicy> policies) {
         return Comparator
                 .comparingInt((BubbleEntry entry) -> policies.get(entry.channel()).renderOrder())
-                .thenComparing((left, right) -> Integer.compare(right.message().priority(), left.message().priority()))
+                // Higher priority values are treated as more important
+                .thenComparing((left, right) -> Integer.compare(right.message().getPriority(), left.message().getPriority()))
                 .thenComparingLong(BubbleEntry::createdGameTime)
                 .thenComparingLong(BubbleEntry::sequenceNumber);
     }

@@ -50,6 +50,7 @@
     "ui.settlements.behavior.behavior.cut_stone": "Cut Stone",
     "ui.settlements.behavior.behavior.harvest_soul_sand": "Harvest Soul Sand",
     "ui.settlements.behavior.behavior.tame_wolf": "Tame Wolf",
+    "ui.settlements.behavior.behavior.butcher_livestock": "Butcher Livestock",
 
     "key.categories.settlements.debug": "Settlements Debug",
     "key.settlements.open_behavior_controller_debug": "Open Behavior Controller (Debug)"

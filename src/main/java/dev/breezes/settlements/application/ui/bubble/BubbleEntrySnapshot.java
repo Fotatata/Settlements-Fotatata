@@ -47,14 +47,14 @@ public record BubbleEntrySnapshot(
         return BubbleEntrySnapshot.builder()
                 .bubbleId(entry.bubbleId())
                 .channel(entry.channel())
-                .bubbleKind(entry.message().bubbleKind())
+                .bubbleKind(entry.message().getBubbleKind())
                 .ownerKey(entry.ownerKey())
-                .priority(entry.message().priority())
+                .priority(entry.message().getPriority())
                 .expireGameTime(entry.expireGameTime())
                 .createdGameTime(entry.createdGameTime())
                 .sequenceNumber(entry.sequenceNumber())
-                .sourceType(entry.message().sourceType())
-                .extraData(entry.message().extraData())
+                .sourceType(entry.message().getSourceType())
+                .extraData(entry.message().getExtraData())
                 .build();
     }
 

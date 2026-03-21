@@ -1,0 +1,252 @@
+package dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering;
+
+import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
+import dev.breezes.settlements.domain.ai.conditions.NearbyButcherableLivestockExistsCondition;
+import dev.breezes.settlements.domain.entities.Expertise;
+import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import lombok.CustomLog;
+import lombok.Getter;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Predicate;
+
+@CustomLog
+public class ButcherLivestockBehavior extends StateMachineBehavior {
+
+    private enum ButcherStage implements StageKey {
+        BUTCHER_TARGET,
+        COLLECT_DROPS,
+        END;
+    }
+
+    public static final String RESERVED_FOR_VILLAGER_KEY = "settlements_reserved_for_villager";
+
+    private final ButcherLivestockConfig config;
+    private final NearbyButcherableLivestockExistsCondition<BaseVillager> nearbyButcherableLivestockExistsCondition;
+    private int butcherCountRemaining;
+
+    @Getter
+    private final BehaviorDescriptor behaviorDescriptor;
+
+    @Nullable
+    private EntityType<?> selectedAnimalType;
+    @Nullable
+    private Animal target;
+
+    public ButcherLivestockBehavior(@Nonnull ButcherLivestockConfig config) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+
+        this.config = config;
+        Map<EntityType<?>, Integer> minimumKeepByType = parseConfiguredMinimumKeep(config.minimumKeepCount());
+        this.behaviorDescriptor = BehaviorDescriptor.builder()
+                .displayNameKey("ui.settlements.behavior.behavior.butcher_livestock")
+                .iconItemId(ResourceLocation.withDefaultNamespace("iron_axe"))
+                .displaySuffix(null)
+                .build();
+
+        this.nearbyButcherableLivestockExistsCondition = NearbyButcherableLivestockExistsCondition.builder()
+                .rangeHorizontal(config.scanRangeHorizontal())
+                .rangeVertical(config.scanRangeVertical())
+                .minimumKeepByType(minimumKeepByType)
+                .requireVillageOwnedTag(config.requireVillageOwnedTag())
+                .build();
+        this.preconditions.add(this.nearbyButcherableLivestockExistsCondition);
+
+        this.butcherCountRemaining = 0;
+        this.selectedAnimalType = null;
+        this.target = null;
+
+        this.initializeStateMachine(this.createControlStep(), ButcherStage.END);
+    }
+
+    protected StagedStep createControlStep() {
+        return StagedStep.builder()
+                .name("ButcherLivestockBehavior")
+                .initialStage(ButcherStage.BUTCHER_TARGET)
+                .stageStepMap(Map.of(
+                        ButcherStage.BUTCHER_TARGET, this.createButcherStep(),
+                        ButcherStage.COLLECT_DROPS, this.createCollectDropsStep()))
+                .nextStage(ButcherStage.END)
+                .build();
+    }
+
+    private BehaviorStep createButcherStep() {
+        TimeBasedStep butcherStep = TimeBasedStep.builder()
+                .withTickable(Ticks.seconds(1).asTickable())
+                .everyTick(context -> {
+                    context.getInitiator().setHeldItem(Items.IRON_AXE.getDefaultInstance());
+                    return StepResult.noOp();
+                })
+                .addKeyFrame(Ticks.seconds(0.5), context -> {
+                    if (this.target == null || !this.target.isAlive()) {
+                        return StepResult.complete();
+                    }
+
+                    this.performButcher(this.target, context.getInitiator().getMinecraftEntity());
+                    this.butcherCountRemaining--;
+
+                    return StepResult.noOp();
+                })
+                .onEnd(context -> {
+                    context.getInitiator().clearHeldItem();
+                    return StepResult.transition(ButcherStage.COLLECT_DROPS);
+                })
+                .build();
+
+        return StayCloseStep.builder()
+                .closeEnoughDistance(2.0)
+                .navigateStep(new NavigateToTargetStep(0.55f, 1))
+                .actionStep(butcherStep)
+                .build();
+    }
+
+    private BehaviorStep createCollectDropsStep() {
+        return TimeBasedStep.builder()
+                .withTickable(Ticks.seconds(1).asTickable())
+                .onEnd(context -> {
+                    BaseVillager villager = context.getInitiator().getMinecraftEntity();
+
+                    List<ItemEntity> drops = this.findReservedDropsNearVillager(villager);
+                    drops.forEach(itemEntity -> context.getInitiator().pickUp(itemEntity));
+
+                    if (this.butcherCountRemaining <= 0 || this.selectedAnimalType == null) {
+                        return StepResult.complete();
+                    }
+
+                    Optional<Animal> nextTarget = this.nearbyButcherableLivestockExistsCondition
+                            .findTargetForType(villager, this.selectedAnimalType);
+                    if (nextTarget.isEmpty()) {
+                        return StepResult.complete();
+                    }
+
+                    this.target = nextTarget.get();
+                    context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.target)));
+                    return StepResult.transition(ButcherStage.BUTCHER_TARGET);
+                })
+                .build();
+    }
+
+    @Override
+    protected void onBehaviorStart(@Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
+        Expertise expertise = entity.getExpertise();
+        int limit = this.config.expertiseButcherLimit().getOrDefault(expertise.getConfigName(), 1);
+        this.butcherCountRemaining = limit;
+
+        Optional<EntityType<?>> selectedType = this.nearbyButcherableLivestockExistsCondition.getSelectedType();
+        Optional<Animal> selectedTarget = this.nearbyButcherableLivestockExistsCondition.getTarget();
+        if (selectedType.isEmpty() || selectedTarget.isEmpty()) {
+            this.requestStop();
+            return;
+        }
+
+        this.selectedAnimalType = selectedType.get();
+        this.target = selectedTarget.get();
+        context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromEntity(this.target)));
+    }
+
+    @Override
+    protected boolean preTickGuard(int delta,
+                                   @Nonnull Level world,
+                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BehaviorContext context) {
+        return this.target != null && this.selectedAnimalType != null;
+    }
+
+    @Override
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager entity) {
+        entity.getNavigationManager().stop();
+        entity.clearHeldItem();
+
+        this.target = null;
+        this.selectedAnimalType = null;
+        this.butcherCountRemaining = 0;
+    }
+
+    private void performButcher(@Nonnull Animal target,
+                                @Nonnull BaseVillager villager) {
+        target.getPersistentData().putUUID(RESERVED_FOR_VILLAGER_KEY, villager.getUUID());
+
+        target.hurt(villager.damageSources().mobAttack(villager), Float.MAX_VALUE);
+        if (target.isAlive()) {
+            target.kill();
+        }
+    }
+
+    private List<ItemEntity> findReservedDropsNearVillager(@Nonnull BaseVillager villager) {
+        AABB area = villager.getBoundingBox().inflate(6, 3, 6);
+        Predicate<ItemEntity> isReservedForVillager = itemEntity -> itemEntity != null
+                && itemEntity.isAlive()
+                && itemEntity.getPersistentData().hasUUID(RESERVED_FOR_VILLAGER_KEY)
+                && villager.getUUID().equals(itemEntity.getPersistentData().getUUID(RESERVED_FOR_VILLAGER_KEY));
+
+        return villager.level().getEntitiesOfClass(ItemEntity.class, area, isReservedForVillager);
+    }
+
+    private static Map<EntityType<?>, Integer> parseConfiguredMinimumKeep(@Nonnull Map<String, Integer> rawMap) {
+        Map<EntityType<?>, Integer> parsed = new HashMap<>();
+
+        for (Map.Entry<String, Integer> entry : rawMap.entrySet()) {
+            String rawType = entry.getKey();
+            int minimum = Math.max(0, entry.getValue());
+
+            Optional<EntityType<?>> entityType = resolveConfiguredEntityType(rawType);
+            if (entityType.isEmpty()) {
+                continue;
+            }
+            parsed.put(entityType.get(), minimum);
+        }
+
+        if (parsed.isEmpty()) {
+            throw new IllegalArgumentException("minimum_keep_count must contain at least one valid animal entity id");
+        }
+
+        return parsed;
+    }
+
+    private static Optional<EntityType<?>> resolveConfiguredEntityType(@Nonnull String rawType) {
+        if (rawType.isBlank()) {
+            return Optional.empty();
+        }
+
+        ResourceLocation entityId = ResourceLocation.tryParse(rawType);
+        if (entityId == null) {
+            entityId = ResourceLocation.withDefaultNamespace(rawType);
+        }
+
+        if (!BuiltInRegistries.ENTITY_TYPE.containsKey(entityId)) {
+            log.error("Unable to parse {} candidate as entity type {}", rawType, entityId);
+            return Optional.empty();
+        }
+
+        return Optional.of(BuiltInRegistries.ENTITY_TYPE.get(entityId));
+    }
+
+}
