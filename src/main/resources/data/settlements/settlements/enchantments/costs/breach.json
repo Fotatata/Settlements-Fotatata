@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:breach",
+    "base_cost": 72,
+    "level_multiplier": 34,
+    "max_level": 4,
+    "min_tier": "expert"
+}

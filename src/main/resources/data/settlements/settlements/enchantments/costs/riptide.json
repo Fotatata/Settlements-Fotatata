@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:riptide",
+    "base_cost": 75,
+    "level_multiplier": 38,
+    "max_level": 3,
+    "min_tier": "expert"
+}

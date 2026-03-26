@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:mending",
+    "base_cost": 220,
+    "level_multiplier": 0,
+    "max_level": 1,
+    "min_tier": "master"
+}

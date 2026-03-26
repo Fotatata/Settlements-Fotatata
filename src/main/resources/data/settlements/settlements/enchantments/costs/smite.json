@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:smite",
+    "base_cost": 14,
+    "level_multiplier": 10,
+    "max_level": 5,
+    "min_tier": "novice"
+}

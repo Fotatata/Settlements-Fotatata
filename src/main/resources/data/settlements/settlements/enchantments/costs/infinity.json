@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:infinity",
+    "base_cost": 88,
+    "level_multiplier": 0,
+    "max_level": 1,
+    "min_tier": "expert"
+}

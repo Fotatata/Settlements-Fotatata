@@ -2,6 +2,7 @@ package dev.breezes.settlements;
 
 import dev.breezes.settlements.infrastructure.config.annotations.ConfigAnnotationProcessor;
 import dev.breezes.settlements.infrastructure.network.core.PacketRegistry;
+import dev.breezes.settlements.bootstrap.registry.components.DataComponentRegistry;
 import dev.breezes.settlements.bootstrap.registry.tabs.CreativeTabRegistry;
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
@@ -25,6 +26,7 @@ public final class SettlementsMod {
 //        BlockRegistry.register(modEventBus);
         CreativeTabRegistry.register(modEventBus);
         EntityRegistry.register(modEventBus);
+        DataComponentRegistry.register(modEventBus);
 
         processAnnotations(modEventBus);
     }

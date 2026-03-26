@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:wind_burst",
+    "base_cost": 90,
+    "level_multiplier": 44,
+    "max_level": 3,
+    "min_tier": "expert"
+}

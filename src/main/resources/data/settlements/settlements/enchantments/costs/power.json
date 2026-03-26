@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:power",
+    "base_cost": 16,
+    "level_multiplier": 28,
+    "max_level": 5,
+    "min_tier": "novice"
+}

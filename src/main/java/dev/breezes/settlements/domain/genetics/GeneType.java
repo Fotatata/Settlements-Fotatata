@@ -6,6 +6,8 @@ public enum GeneType {
     CONSTITUTION,
     AGILITY,
     INTELLIGENCE,
+    WILL,
+    CHARISMA,
     ;
 
 }

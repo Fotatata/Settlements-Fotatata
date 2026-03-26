@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:sharpness",
+    "base_cost": 18,
+    "level_multiplier": 30,
+    "max_level": 5,
+    "min_tier": "novice"
+}

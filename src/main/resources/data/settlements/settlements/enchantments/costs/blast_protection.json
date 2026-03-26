@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:blast_protection",
+    "base_cost": 16,
+    "level_multiplier": 12,
+    "max_level": 4,
+    "min_tier": "novice"
+}

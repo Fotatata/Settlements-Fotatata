@@ -1,0 +1,12 @@
+{
+    "id": "settlements:war_smith",
+    "display_name": "War Smith",
+    "description": "A veteran of a thousand battles. Knows exactly how to arm a warrior.",
+    "enchantment_weights": {
+        "minecraft:sharpness": 4.0,
+        "minecraft:smite": 2.0,
+        "minecraft:unbreaking": 2.0,
+        "minecraft:looting": 1.5,
+        "minecraft:silk_touch": 0.1
+    }
+}

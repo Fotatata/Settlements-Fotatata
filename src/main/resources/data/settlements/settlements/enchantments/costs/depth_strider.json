@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:depth_strider",
+    "base_cost": 28,
+    "level_multiplier": 18,
+    "max_level": 3,
+    "min_tier": "apprentice"
+}

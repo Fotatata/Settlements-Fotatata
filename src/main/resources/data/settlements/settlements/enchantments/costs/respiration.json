@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:respiration",
+    "base_cost": 25,
+    "level_multiplier": 16,
+    "max_level": 3,
+    "min_tier": "apprentice"
+}

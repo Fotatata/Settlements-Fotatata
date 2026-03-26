@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:looting",
+    "base_cost": 16,
+    "level_multiplier": 32,
+    "max_level": 3,
+    "min_tier": "novice"
+}

@@ -3,13 +3,8 @@ package dev.breezes.settlements.domain.entities;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-/*
- * 1. Novice
- * 2. Apprentice
- * 3. Journeyman
- * 4. Expert
- * 5. Master
- */
+import javax.annotation.Nonnull;
+
 @AllArgsConstructor
 @Getter
 public enum Expertise {
@@ -31,7 +26,7 @@ public enum Expertise {
         throw new IllegalArgumentException("Invalid level: " + level);
     }
 
-    public static Expertise fromString(String level) {
+    public static Expertise fromString(@Nonnull String level) {
         for (Expertise expertise : Expertise.values()) {
             if (expertise.name().equalsIgnoreCase(level)) {
                 return expertise;

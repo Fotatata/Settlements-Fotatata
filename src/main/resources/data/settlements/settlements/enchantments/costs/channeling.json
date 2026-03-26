@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:channeling",
+    "base_cost": 65,
+    "level_multiplier": 0,
+    "max_level": 1,
+    "min_tier": "expert"
+}

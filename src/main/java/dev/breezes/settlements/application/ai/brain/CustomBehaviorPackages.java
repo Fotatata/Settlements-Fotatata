@@ -18,6 +18,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.cooking.smokemeat.SmokeMeatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.crafting.CutStoneConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.enchanting.EnchantItemConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneBehavior;
@@ -235,7 +237,8 @@ public final class CustomBehaviorPackages {
             addTrackedChoiceBehavior(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.COW)),
                     workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
         } else if (profession == VillagerProfession.LIBRARIAN) {
-            // customBehaviorWeightMap.put(new EnchantItemBehavior(), customGoalWeight);
+            addTrackedChoiceBehavior(new EnchantItemBehavior(ConfigFactory.create(EnchantItemConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
         } else if (profession == VillagerProfession.MASON) {
             addTrackedChoiceBehavior(new CutStoneBehavior(ConfigFactory.create(CutStoneConfig.class)),
                     workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);

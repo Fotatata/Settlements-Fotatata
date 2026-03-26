@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:thorns",
+    "base_cost": 42,
+    "level_multiplier": 26,
+    "max_level": 3,
+    "min_tier": "journeyman"
+}

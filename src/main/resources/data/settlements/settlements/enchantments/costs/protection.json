@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:protection",
+    "base_cost": 18,
+    "level_multiplier": 32,
+    "max_level": 4,
+    "min_tier": "novice"
+}

@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:fire_aspect",
+    "base_cost": 38,
+    "level_multiplier": 24,
+    "max_level": 2,
+    "min_tier": "journeyman"
+}

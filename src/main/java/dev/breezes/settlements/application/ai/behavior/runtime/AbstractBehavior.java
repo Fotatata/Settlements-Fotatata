@@ -73,7 +73,7 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
         this.latestPreconditionEvaluationResults.clear();
 
         if (this.preconditions.isEmpty()) {
-            log.behaviorTrace("No preconditions configured");
+            log.behaviorStatus("No preconditions configured");
             return true;
         }
 
@@ -83,13 +83,13 @@ public abstract class AbstractBehavior<T extends Entity & ISettlementsBrainEntit
             boolean passed = precondition.test(entity);
             this.latestPreconditionEvaluationResults.put(precondition.getClass(), passed);
             if (!passed) {
-                log.behaviorTrace("Precondition '{}' is not met", precondition.getClass().getSimpleName());
+                log.behaviorStatus("Precondition '{}' is not met", precondition.getClass().getSimpleName());
                 allPassed = false;
             }
         }
 
         if (allPassed) {
-            log.behaviorTrace("All preconditions are met");
+            log.behaviorStatus("All preconditions are met");
         }
         return allPassed;
     }

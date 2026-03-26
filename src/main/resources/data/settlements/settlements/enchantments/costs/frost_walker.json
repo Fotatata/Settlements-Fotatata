@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:frost_walker",
+    "base_cost": 80,
+    "level_multiplier": 42,
+    "max_level": 2,
+    "min_tier": "expert"
+}

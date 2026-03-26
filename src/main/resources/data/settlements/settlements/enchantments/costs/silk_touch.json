@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:silk_touch",
+    "base_cost": 52,
+    "level_multiplier": 0,
+    "max_level": 1,
+    "min_tier": "journeyman"
+}

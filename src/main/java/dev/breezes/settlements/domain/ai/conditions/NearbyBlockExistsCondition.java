@@ -15,13 +15,15 @@ import java.util.Optional;
 
 @CustomLog
 public class NearbyBlockExistsCondition<E extends Entity, B extends Block> implements ICondition<E> {
+
     private final double rangeHorizontal;
     private final double rangeVertical;
     private final Class<B> targetBlockClass;
     private final int minimumTargetCount;
 
-    // IBlockCondition allows testing both itself and neighbours
+    // IBlockCondition allows testing both itself and neighbors
     private final IBlockCondition extraBlockCondition;
+
     @Nonnull
     private List<BlockPos> targets;
 

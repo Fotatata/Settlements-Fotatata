@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:swift_sneak",
+    "base_cost": 160,
+    "level_multiplier": 52,
+    "max_level": 3,
+    "min_tier": "master"
+}

@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:knockback",
+    "base_cost": 12,
+    "level_multiplier": 8,
+    "max_level": 2,
+    "min_tier": "novice"
+}

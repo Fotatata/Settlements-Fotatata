@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:multishot",
+    "base_cost": 48,
+    "level_multiplier": 0,
+    "max_level": 1,
+    "min_tier": "journeyman"
+}

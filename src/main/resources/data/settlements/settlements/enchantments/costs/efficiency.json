@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:efficiency",
+    "base_cost": 15,
+    "level_multiplier": 28,
+    "max_level": 5,
+    "min_tier": "novice"
+}

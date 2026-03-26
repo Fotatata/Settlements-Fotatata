@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:soul_speed",
+    "base_cost": 150,
+    "level_multiplier": 48,
+    "max_level": 3,
+    "min_tier": "master"
+}

@@ -1,0 +1,7 @@
+{
+    "enchantment": "minecraft:piercing",
+    "base_cost": 14,
+    "level_multiplier": 9,
+    "max_level": 4,
+    "min_tier": "novice"
+}
