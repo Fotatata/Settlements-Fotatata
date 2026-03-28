@@ -218,8 +218,10 @@ public final class Elements {
             graphics.fill(x, y, x + TOTAL_SIZE, y + TOTAL_SIZE, borderColorSupplier.getAsInt());
             // Inner background
             graphics.fill(x + 1, y + 1, x + TOTAL_SIZE - 1, y + TOTAL_SIZE - 1, ICON_BACKGROUND_COLOR);
-            // Item
-            graphics.renderItem(stackSupplier.get(), x + BORDER_SIZE, y + BORDER_SIZE);
+            // Item icon
+            ItemStack stack = stackSupplier.get();
+            graphics.renderItem(stack, x + BORDER_SIZE, y + BORDER_SIZE);
+            graphics.renderItemDecorations(Minecraft.getInstance().font, stack, x + BORDER_SIZE, y + BORDER_SIZE);
         }
 
         @Override

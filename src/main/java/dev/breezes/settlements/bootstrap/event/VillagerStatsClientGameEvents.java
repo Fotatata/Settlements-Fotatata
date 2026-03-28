@@ -1,8 +1,11 @@
 package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.SettlementsMod;
-import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ServerBoundOpenBehaviorControllerPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundCloseVillagerStatsPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundOpenVillagerStatsPacket;
 import dev.breezes.settlements.presentation.ui.keybindings.SettlementsKeyMappings;
+import dev.breezes.settlements.presentation.ui.stats.VillagerStatsClientState;
+import dev.breezes.settlements.presentation.ui.stats.VillagerStatsScreen;
 import dev.breezes.settlements.shared.util.VillagerRaycastUtil;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -20,9 +23,9 @@ import java.util.Optional;
 
 @EventBusSubscriber(modid = SettlementsMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public final class BehaviorControllerClientGameEvents {
+public final class VillagerStatsClientGameEvents {
 
-    private static final String NO_VILLAGER_IN_RANGE_KEY = "ui.settlements.behavior.debug.no_villager_in_range";
+    private static final String NO_VILLAGER_IN_RANGE_KEY = "ui.settlements.stats.no_villager_in_range";
 
     @SubscribeEvent
     public static void onClientTick(@Nonnull ClientTickEvent.Post event) {
@@ -31,7 +34,14 @@ public final class BehaviorControllerClientGameEvents {
             return;
         }
 
-        while (SettlementsKeyMappings.OPEN_BEHAVIOR_CONTROLLER_DEBUG.consumeClick()) {
+        // If the stats screen was closed unexpectedly but the session state was not cleared, clean it up
+        if (VillagerStatsClientState.hasActiveSession() && !(minecraft.screen instanceof VillagerStatsScreen)) {
+            long sessionId = VillagerStatsClientState.activeSessionId();
+            VillagerStatsClientState.forceClearSession();
+            PacketDistributor.sendToServer(new ServerBoundCloseVillagerStatsPacket(sessionId));
+        }
+
+        while (SettlementsKeyMappings.OPEN_VILLAGER_STATS.consumeClick()) {
             if (minecraft.screen != null) {
                 continue;
             }
@@ -42,7 +52,7 @@ public final class BehaviorControllerClientGameEvents {
                 continue;
             }
 
-            PacketDistributor.sendToServer(new ServerBoundOpenBehaviorControllerPacket(hitResult.get().getEntity().getId()));
+            PacketDistributor.sendToServer(new ServerBoundOpenVillagerStatsPacket(hitResult.get().getEntity().getId()));
             break;
         }
     }

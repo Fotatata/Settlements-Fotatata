@@ -24,6 +24,9 @@ public class VillagerInventory {
     private ItemStack mainHand;
     private ItemStack offHand;
 
+    @Getter
+    private int inventoryVersion;
+
     @Builder
     public VillagerInventory(int backpackSize) {
         this.backpackSize = backpackSize;
@@ -31,6 +34,7 @@ public class VillagerInventory {
 
         this.mainHand = ItemStack.EMPTY;
         this.offHand = ItemStack.EMPTY;
+        this.inventoryVersion = 0;
     }
 
     public Optional<ItemStack> getMainHand() {
@@ -50,6 +54,7 @@ public class VillagerInventory {
         }
         // Work on a copy to avoid mutating the caller's stack reference
         ItemStack remainder = this.backpack.addItem(item.copy());
+        this.inventoryVersion++;
         return remainder.isEmpty() ? Optional.empty() : Optional.of(remainder);
     }
 
@@ -103,7 +108,11 @@ public class VillagerInventory {
             }
         }
 
-        return amount - remaining;
+        int consumed = amount - remaining;
+        if (consumed > 0) {
+            this.inventoryVersion++;
+        }
+        return consumed;
     }
 
     /**
@@ -112,6 +121,7 @@ public class VillagerInventory {
     public Optional<ItemStack> setMainHand(ItemStack newItem) {
         ItemStack previous = this.mainHand;
         this.mainHand = (newItem == null || newItem.isEmpty()) ? ItemStack.EMPTY : newItem.copy();
+        this.inventoryVersion++;
         return previous.isEmpty() ? Optional.empty() : Optional.of(previous);
     }
 
@@ -121,6 +131,7 @@ public class VillagerInventory {
     public Optional<ItemStack> setOffHand(ItemStack newItem) {
         ItemStack previous = this.offHand;
         this.offHand = (newItem == null || newItem.isEmpty()) ? ItemStack.EMPTY : newItem.copy();
+        this.inventoryVersion++;
         return previous.isEmpty() ? Optional.empty() : Optional.of(previous);
     }
 

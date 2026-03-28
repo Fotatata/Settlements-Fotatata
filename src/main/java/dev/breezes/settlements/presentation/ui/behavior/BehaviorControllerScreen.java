@@ -136,12 +136,12 @@ public class BehaviorControllerScreen extends LayoutScreen {
     }
 
     @Override
-    public void onClose() {
+    public void removed() {
         if (this.sessionId > 0) {
             PacketDistributor.sendToServer(new ServerBoundCloseBehaviorControllerPacket(this.sessionId));
             BehaviorControllerClientState.clearSession(this.sessionId);
         }
-        super.onClose();
+        super.removed();
     }
 
     public void applySnapshot(@Nonnull BehaviorControllerSnapshot snapshot) {

@@ -10,6 +10,14 @@ import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packe
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ServerBoundHeartbeatBehaviorControllerPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.behavior.packet.ServerBoundOpenBehaviorControllerPacket;
 import dev.breezes.settlements.infrastructure.network.features.ui.bubble.packet.ClientBoundBubbleSnapshotPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundHeartbeatAckVillagerStatsPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundOpenVillagerStatsPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerInventorySnapshotPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerStatsSnapshotPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ClientBoundVillagerStatsUnavailablePacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundCloseVillagerStatsPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundHeartbeatVillagerStatsPacket;
+import dev.breezes.settlements.infrastructure.network.features.ui.stats.packet.ServerBoundOpenVillagerStatsPacket;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -29,6 +37,7 @@ public class PacketRegistry {
 
         registerClient(registrar, ClientBoundBubbleSnapshotPacket.ID, ClientBoundBubbleSnapshotPacket.CODEC);
 
+        // Villager behavior UI packets
         registerServer(registrar, ServerBoundOpenBehaviorControllerPacket.ID, ServerBoundOpenBehaviorControllerPacket.CODEC);
         registerServer(registrar, ServerBoundCloseBehaviorControllerPacket.ID, ServerBoundCloseBehaviorControllerPacket.CODEC);
         registerServer(registrar, ServerBoundHeartbeatBehaviorControllerPacket.ID, ServerBoundHeartbeatBehaviorControllerPacket.CODEC);
@@ -37,6 +46,17 @@ public class PacketRegistry {
         registerClient(registrar, ClientBoundBehaviorControllerSnapshotPacket.ID, ClientBoundBehaviorControllerSnapshotPacket.CODEC);
         registerClient(registrar, ClientBoundHeartbeatAckBehaviorControllerPacket.ID, ClientBoundHeartbeatAckBehaviorControllerPacket.CODEC);
         registerClient(registrar, ClientBoundBehaviorControllerUnavailablePacket.ID, ClientBoundBehaviorControllerUnavailablePacket.CODEC);
+
+        // Villager stats UI packets
+        registerServer(registrar, ServerBoundOpenVillagerStatsPacket.ID, ServerBoundOpenVillagerStatsPacket.CODEC);
+        registerServer(registrar, ServerBoundCloseVillagerStatsPacket.ID, ServerBoundCloseVillagerStatsPacket.CODEC);
+        registerServer(registrar, ServerBoundHeartbeatVillagerStatsPacket.ID, ServerBoundHeartbeatVillagerStatsPacket.CODEC);
+
+        registerClient(registrar, ClientBoundOpenVillagerStatsPacket.ID, ClientBoundOpenVillagerStatsPacket.CODEC);
+        registerClient(registrar, ClientBoundVillagerStatsSnapshotPacket.ID, ClientBoundVillagerStatsSnapshotPacket.CODEC);
+        registerClient(registrar, ClientBoundVillagerInventorySnapshotPacket.ID, ClientBoundVillagerInventorySnapshotPacket.CODEC);
+        registerClient(registrar, ClientBoundHeartbeatAckVillagerStatsPacket.ID, ClientBoundHeartbeatAckVillagerStatsPacket.CODEC);
+        registerClient(registrar, ClientBoundVillagerStatsUnavailablePacket.ID, ClientBoundVillagerStatsUnavailablePacket.CODEC);
     }
 
     private static <T extends ClientBoundPacket> void registerClient(@Nonnull PayloadRegistrar registrar,

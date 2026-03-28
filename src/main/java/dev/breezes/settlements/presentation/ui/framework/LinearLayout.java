@@ -103,6 +103,7 @@ public class LinearLayout extends BaseElement {
         if (totalWeight > 0 && mainAvailable > 0) {
             int distributed = 0;
             int weightedCount = 0;
+            int totalWeightedChildren = (int) this.children.stream().filter(c -> getEffectiveWeight(c) > 0).count();
 
             for (UIElement child : this.children) {
                 int weight = getEffectiveWeight(child);
@@ -113,11 +114,14 @@ public class LinearLayout extends BaseElement {
 
                 int share;
                 // Give the last weighted child whatever remains to avoid rounding errors
-                if (weightedCount == totalWeight) {
+                if (weightedCount == totalWeightedChildren) {
                     share = mainAvailable - distributed;
                 } else {
                     share = mainAvailable * weight / totalWeight;
                 }
+
+                // WeightedMax: clamp to its declared maximum
+                share = clampShareToMax(child, share);
                 distributed += share;
 
                 if (this.axis == Axis.VERTICAL) {
@@ -247,9 +251,26 @@ public class LinearLayout extends BaseElement {
 
         return switch (mainConstraint) {
             case SizeConstraint.Weighted w -> w.weight();
+            case SizeConstraint.WeightedMax wm -> wm.weight();
             case SizeConstraint.Fill ignored -> 1;
             default -> 0;
         };
+    }
+
+    /**
+     * If the child has a {@link SizeConstraint.WeightedMax} constraint on the main axis,
+     * clamps the computed share to its declared maximum.
+     * Otherwise, returns {@code share} unchanged.
+     */
+    private int clampShareToMax(@Nonnull UIElement child, int share) {
+        SizeConstraint mainConstraint = (this.axis == Axis.VERTICAL)
+                ? child.heightConstraint()
+                : child.widthConstraint();
+
+        if (mainConstraint instanceof SizeConstraint.WeightedMax wm) {
+            return Math.min(share, wm.maxPixels());
+        }
+        return share;
     }
 
     public static final class Builder {

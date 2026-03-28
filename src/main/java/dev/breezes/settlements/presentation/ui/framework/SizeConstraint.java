@@ -46,6 +46,13 @@ public sealed interface SizeConstraint {
     record Weighted(int weight) implements SizeConstraint {
     }
 
+    /**
+     * Proportional share of remaining space, capped at a maximum pixel size.
+     * Useful when an element should grow with available space but never exceed a fixed bound.
+     */
+    record WeightedMax(int weight, int maxPixels) implements SizeConstraint {
+    }
+
     SizeConstraint FILL = new Fill();
     SizeConstraint WRAP = new Wrap();
 
@@ -55,6 +62,10 @@ public sealed interface SizeConstraint {
 
     static SizeConstraint weighted(int weight) {
         return new Weighted(weight);
+    }
+
+    static SizeConstraint weightedMax(int weight, int maxPixels) {
+        return new WeightedMax(weight, maxPixels);
     }
 
 }

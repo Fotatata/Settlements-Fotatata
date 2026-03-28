@@ -1,0 +1,153 @@
+package dev.breezes.settlements.application.ui.stats.snapshot;
+
+import dev.breezes.settlements.application.ui.behavior.model.SchedulePhase;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorBinding;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorRuntimeInformation;
+import dev.breezes.settlements.application.ui.behavior.snapshot.IBehaviorInfoProvider;
+import dev.breezes.settlements.application.ui.stats.model.VillagerInventorySnapshot;
+import dev.breezes.settlements.application.ui.stats.model.VillagerStatsSnapshot;
+import dev.breezes.settlements.domain.ai.behavior.contracts.IBehavior;
+import dev.breezes.settlements.domain.ai.behavior.model.BehaviorStatus;
+import dev.breezes.settlements.domain.genetics.GeneType;
+import dev.breezes.settlements.domain.genetics.GeneticsProfile;
+import dev.breezes.settlements.domain.inventory.VillagerInventory;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.shared.annotations.functional.ServerSide;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.item.ItemStack;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
+
+@ServerSide
+public final class VillagerStatsSnapshotBuilder {
+
+    private static final VillagerStatsSnapshotBuilder INSTANCE = new VillagerStatsSnapshotBuilder();
+
+    public static VillagerStatsSnapshotBuilder getInstance() {
+        return INSTANCE;
+    }
+
+    @Nonnull
+    public VillagerStatsSnapshot buildStats(@Nonnull BaseVillager villager, long gameTime) {
+        String villagerName = villager.hasCustomName() ? villager.getName().getString() : null;
+        String professionKey = villager.getVillagerData().getProfession().toString();
+        int expertiseLevel = villager.getVillagerData().getLevel();
+
+        double[] geneValues = buildGeneValues(villager);
+
+        BlockPos homePos = extractMemoryPos(villager, MemoryModuleType.HOME);
+        BlockPos workstationPos = extractMemoryPos(villager, MemoryModuleType.JOB_SITE);
+
+        Activity activity = villager.getBrain().getActiveNonCoreActivity().orElse(Activity.IDLE);
+        SchedulePhase schedulePhase = mapSchedulePhase(activity);
+
+        ActiveBehaviorInfo activeBehavior = findActiveBehavior(villager);
+
+        return VillagerStatsSnapshot.builder()
+                .gameTime(gameTime)
+                .villagerEntityId(villager.getId())
+                .villagerName(villagerName)
+                .professionKey(professionKey)
+                .expertiseLevel(expertiseLevel)
+                .currentHealth(villager.getHealth())
+                .maxHealth(villager.getMaxHealth())
+                .geneValues(geneValues)
+                .homePos(homePos)
+                .workstationPos(workstationPos)
+                .activeBehaviorNameKey(activeBehavior != null ? activeBehavior.nameKey : null)
+                .activeBehaviorStage(activeBehavior != null ? activeBehavior.stageLabel : null)
+                .activeBehaviorIconId(activeBehavior != null ? activeBehavior.iconId : null)
+                .schedulePhase(schedulePhase)
+                .reputation(0) // TODO: wire to actual villager reputation data
+                .build();
+    }
+
+    @Nonnull
+    public VillagerInventorySnapshot buildInventory(@Nonnull BaseVillager villager) {
+        VillagerInventory inventory = villager.getSettlementsInventory();
+        SimpleContainer backpack = inventory.getBackpack();
+
+        List<ItemStack> nonEmptyItems = new ArrayList<>();
+        for (int i = 0; i < backpack.getContainerSize(); i++) {
+            ItemStack stack = backpack.getItem(i);
+            if (!stack.isEmpty()) {
+                nonEmptyItems.add(stack.copy());
+            }
+        }
+
+        return VillagerInventorySnapshot.builder()
+                .backpackSize(inventory.getBackpackSize())
+                .nonEmptyItems(nonEmptyItems)
+                .build();
+    }
+
+    private static double[] buildGeneValues(@Nonnull BaseVillager villager) {
+        GeneticsProfile genetics = villager.getGenetics();
+        GeneType[] types = GeneType.VALUES;
+        double[] values = new double[types.length];
+        for (int i = 0; i < types.length; i++) {
+            values[i] = genetics.getGeneValue(types[i]);
+        }
+        return values;
+    }
+
+    @Nullable
+    private static BlockPos extractMemoryPos(@Nonnull BaseVillager villager,
+                                             @Nonnull MemoryModuleType<GlobalPos> memoryType) {
+        return villager.getBrain()
+                .getMemory(memoryType)
+                .map(GlobalPos::pos)
+                .orElse(null);
+    }
+
+    @Nullable
+    private static ActiveBehaviorInfo findActiveBehavior(@Nonnull BaseVillager villager) {
+        for (BehaviorBinding binding : villager.getTrackedCustomBehaviors()) {
+            IBehavior<BaseVillager> behavior = binding.behavior();
+            if (behavior.getStatus() != BehaviorStatus.RUNNING) {
+                continue;
+            }
+            if (!(behavior instanceof IBehaviorInfoProvider infoProvider)) {
+                continue;
+            }
+
+            BehaviorDescriptor descriptor = infoProvider.getBehaviorDescriptor();
+            BehaviorRuntimeInformation runtime = infoProvider.getBehaviorRuntimeInformation(villager);
+
+            return new ActiveBehaviorInfo(
+                    descriptor.displayNameKey(),
+                    runtime.currentStageLabel(),
+                    descriptor.iconItemId().toString()
+            );
+        }
+        return null;
+    }
+
+    private static SchedulePhase mapSchedulePhase(@Nonnull Activity activity) {
+        if (activity == Activity.REST) {
+            return SchedulePhase.REST;
+        }
+        if (activity == Activity.WORK) {
+            return SchedulePhase.WORK;
+        }
+        if (activity == Activity.MEET) {
+            return SchedulePhase.MEET;
+        }
+        if (activity == Activity.IDLE || activity == Activity.PLAY) {
+            return SchedulePhase.IDLE;
+        }
+        return SchedulePhase.UNKNOWN;
+    }
+
+    private record ActiveBehaviorInfo(@Nonnull String nameKey, @Nullable String stageLabel, @Nonnull String iconId) {
+    }
+
+}

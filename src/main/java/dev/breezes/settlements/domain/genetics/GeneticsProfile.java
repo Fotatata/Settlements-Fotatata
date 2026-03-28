@@ -32,8 +32,8 @@ public class GeneticsProfile {
      */
     public GeneticsProfile() {
         this.genes = new EnumMap<>(GeneType.class);
-        for (GeneType type : GeneType.values()) {
-            double baseValue = RandomUtil.randomDouble(0, 1);
+        for (GeneType type : GeneType.VALUES) {
+            double baseValue = Mth.clamp(RandomUtil.randomGaussian(0.4, 0.133), 0.0, 1.0);
             this.setGene(type, new Gene(baseValue));
         }
     }
@@ -65,7 +65,7 @@ public class GeneticsProfile {
      */
     public GeneticsProfile crossover(GeneticsProfile other, RandomSource random) {
         GeneticsProfile child = new GeneticsProfile();
-        for (GeneType type : GeneType.values()) {
+        for (GeneType type : GeneType.VALUES) {
             double valA = this.getGeneValue(type);
             double valB = other.getGeneValue(type);
 
@@ -99,7 +99,7 @@ public class GeneticsProfile {
         CompoundTag geneticsTag = nbtTag.getCompound(GENETICS_NBT_TAG);
         this.genes.clear();
 
-        for (GeneType type : GeneType.values()) {
+        for (GeneType type : GeneType.VALUES) {
             if (geneticsTag.contains(type.name(), Tag.TAG_DOUBLE)) {
                 this.genes.put(type, new Gene(geneticsTag.getDouble(type.name())));
             }

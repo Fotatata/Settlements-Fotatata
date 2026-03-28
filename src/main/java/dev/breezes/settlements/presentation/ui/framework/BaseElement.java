@@ -13,7 +13,7 @@ import javax.annotation.Nonnull;
  * All containers and leaf elements extend this class.
  */
 @ClientSide
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class BaseElement implements UIElement {
 
     protected final SizeConstraint widthConstraint;
@@ -72,6 +72,7 @@ public abstract class BaseElement implements UIElement {
             case SizeConstraint.Fill ignored -> available;
             case SizeConstraint.Wrap w -> Math.min(contentSize, Math.min(w.maxPixels(), available));
             case SizeConstraint.Weighted ignored -> available;
+            case SizeConstraint.WeightedMax wm -> Math.min(available, wm.maxPixels());
         };
     }
 

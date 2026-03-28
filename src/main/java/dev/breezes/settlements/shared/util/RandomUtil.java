@@ -3,7 +3,11 @@ package dev.breezes.settlements.shared.util;
 import net.minecraft.util.Mth;
 
 import javax.annotation.Nonnull;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 public class RandomUtil {
 
@@ -83,6 +87,19 @@ public class RandomUtil {
         if (chance(chance)) {
             runnable.run();
         }
+    }
+
+    /**
+     * Generates a random value using a normal (Gaussian) distribution.
+     * Useful for stats where most values should group around a center (mean),
+     * with rare outliers on the high and low ends.
+     *
+     * @param mean              The center of the bell curve.
+     * @param standardDeviation How wide the curve is (smaller = tighter grouping).
+     */
+    public static double randomGaussian(double mean, double standardDeviation) {
+        double gaussian = RANDOM.nextGaussian();
+        return mean + (gaussian * standardDeviation);
     }
 
 }
