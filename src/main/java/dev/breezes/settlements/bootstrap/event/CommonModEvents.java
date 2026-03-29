@@ -1,6 +1,7 @@
 package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
+import dev.breezes.settlements.infrastructure.minecraft.entities.cats.SettlementsCat;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.SettlementsWolf;
 import lombok.CustomLog;
@@ -24,6 +25,7 @@ public class CommonModEvents {
     @SubscribeEvent
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(EntityRegistry.BASE_VILLAGER.get(), BaseVillager.createCustomAttributes());
+        event.put(EntityRegistry.SETTLEMENTS_CAT.get(), SettlementsCat.createAttributes().build());
         event.put(EntityRegistry.SETTLEMENTS_WOLF.get(), SettlementsWolf.createAttributes().build());
     }
 

@@ -11,8 +11,8 @@ import dev.breezes.settlements.infrastructure.config.annotations.maps.MapEntry;
 
 import java.util.Map;
 
-@BehaviorConfig(name = "tame_wolf", type = ConfigurationType.BEHAVIOR)
-public record TameWolfConfig(
+@BehaviorConfig(name = "tame_cat", type = ConfigurationType.BEHAVIOR)
+public record TameCatConfig(
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = BehaviorConfigConstants.PRECONDITION_CHECK_COOLDOWN_MIN_IDENTIFIER,
@@ -48,7 +48,7 @@ public record TameWolfConfig(
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "scan_range_horizontal",
-                description = "Horizontal range (in blocks) to scan for nearby wolves to tame",
+                description = "Horizontal range (in blocks) to scan for nearby cats to tame",
                 defaultValue = 32,
                 min = 5,
                 max = 128)
@@ -57,7 +57,7 @@ public record TameWolfConfig(
         @IntegerConfig(
                 type = ConfigurationType.BEHAVIOR,
                 identifier = "scan_range_vertical",
-                description = "Vertical range (in blocks) to scan for nearby wolves to tame",
+                description = "Vertical range (in blocks) to scan for nearby cats to tame",
                 defaultValue = 12,
                 min = 1,
                 max = 16)
@@ -65,20 +65,20 @@ public record TameWolfConfig(
 
         @MapConfig(
                 type = ConfigurationType.BEHAVIOR,
-                identifier = "expertise_wolf_limit",
-                description = "Map of expertise to the maximum number of wolves a villager can own",
+                identifier = "expertise_cat_limit",
+                description = "Map of expertise to the maximum number of cats a villager can own",
                 deserializer = "StringToInteger",
                 defaultValue = {
                         @MapEntry(key = "novice", value = "1"),
                         @MapEntry(key = "apprentice", value = "1"),
-                        @MapEntry(key = "journeyman", value = "2"),
-                        @MapEntry(key = "expert", value = "2"),
-                        @MapEntry(key = "master", value = "3")
+                        @MapEntry(key = "journeyman", value = "1"),
+                        @MapEntry(key = "expert", value = "1"),
+                        @MapEntry(key = "master", value = "2")
                 })
-        Map<String, Integer> expertiseWolfLimit
+        Map<String, Integer> expertiseCatLimit
 ) implements BehaviorTimingConfig {
 
-    public TameWolfConfig {
+    public TameCatConfig {
         BehaviorCooldownValidator.validateRanges(preconditionCheckCooldownMin, preconditionCheckCooldownMax,
                 behaviorCooldownMin, behaviorCooldownMax);
     }

@@ -1,6 +1,7 @@
 package dev.breezes.settlements.bootstrap.registry.entities;
 
 import dev.breezes.settlements.SettlementsMod;
+import dev.breezes.settlements.infrastructure.minecraft.entities.cats.SettlementsCat;
 import dev.breezes.settlements.infrastructure.minecraft.entities.projectiles.VillagerFishingHook;
 import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
 import dev.breezes.settlements.infrastructure.minecraft.entities.wolves.SettlementsWolf;
@@ -30,6 +31,14 @@ public class EntityRegistry {
                     .passengerAttachments(new Vec3(0.0, 0.81875, -0.0625))
                     .clientTrackingRange(10)
                     .build("settlements_wolf"));
+
+    public static final Supplier<EntityType<SettlementsCat>> SETTLEMENTS_CAT = REGISTRY.register("settlements_cat",
+            () -> EntityType.Builder.of(SettlementsCat::new, MobCategory.CREATURE)
+                    .sized(0.6F, 0.7F)
+                    .eyeHeight(0.35F)
+                    .passengerAttachments(0.5125F)
+                    .clientTrackingRange(10)
+                    .build("settlements_cat"));
 
     public static final Supplier<EntityType<VillagerFishingHook>> VILLAGER_FISHING_HOOK = REGISTRY.register("villager_fishing_hook",
             () -> EntityType.Builder.<VillagerFishingHook>of(VillagerFishingHook::new, MobCategory.MISC)

@@ -8,6 +8,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.BreedAnimalsConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepBehaviorV2;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.ShearSheepConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameCatBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameCatConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfBehaviorV2;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.TameWolfConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.animals.butchering.ButcherLivestockBehavior;
@@ -219,14 +221,16 @@ public final class CustomBehaviorPackages {
                     workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
             addTrackedChoiceBehavior(new TameWolfBehaviorV2(ConfigFactory.create(TameWolfConfig.class)),
                     workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
-            // customBehaviorWeightMap.put(new TameCatBehavior(), customGoalWeight);
+            addTrackedChoiceBehavior(new TameCatBehavior(ConfigFactory.create(TameCatConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
             addTrackedChoiceBehavior(new BreedAnimalsBehavior(ConfigFactory.create(BreedAnimalsConfig.class), Set.of(EntityType.CHICKEN)),
                     workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
             addTrackedChoiceBehavior(new MilkCowBehavior(ConfigFactory.create(MilkCowConfig.class)),
                     workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
             // customBehaviorWeightMap.put(new MakeCakeBehavior(), customGoalWeight);
         } else if (profession == VillagerProfession.FISHERMAN) {
-            // customBehaviorWeightMap.put(new TameCatBehavior(), customGoalWeight);
+            addTrackedChoiceBehavior(new TameCatBehavior(ConfigFactory.create(TameCatConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
             addTrackedChoiceBehavior(new FishingBehavior(ConfigFactory.create(FishingConfig.class)),
                     workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
         } else if (profession == VillagerProfession.FLETCHER) {

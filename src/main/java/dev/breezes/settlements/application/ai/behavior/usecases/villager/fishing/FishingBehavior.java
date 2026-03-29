@@ -318,6 +318,8 @@ public class FishingBehavior extends StateMachineBehavior {
                     }
                     BaseVillager villager = context.getInitiator().getMinecraftEntity();
                     if (this.fishedEntity.distanceToSqr(villager) <= COLLECT_DISTANCE_SQUARED) {
+                        Location.fromEntity(this.fishedEntity, false).displayParticles(ParticleTypes.CLOUD,
+                                3, 0.1, 0.1, 0.1, 0.1);
                         this.fishedEntity.discard();
                         return collectAndComplete(context);
                     }
@@ -325,6 +327,8 @@ public class FishingBehavior extends StateMachineBehavior {
                 })
                 .onEnd(context -> {
                     if (this.fishedEntity != null && !this.fishedEntity.isRemoved()) {
+                        Location.fromEntity(this.fishedEntity, false).displayParticles(ParticleTypes.CLOUD,
+                                3, 0.1, 0.1, 0.1, 0.1);
                         this.fishedEntity.discard();
                     }
                     return collectAndComplete(context);
