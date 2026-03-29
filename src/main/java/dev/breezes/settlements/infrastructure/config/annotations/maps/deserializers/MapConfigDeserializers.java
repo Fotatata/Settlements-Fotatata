@@ -7,7 +7,7 @@ public class MapConfigDeserializers {
             case "StringToString" -> new StringToStringMapConfigDeserializer();
             case "StringToInteger" -> new StringToIntegerMapConfigDeserializer();
 //            case "StringToLong" -> new StringToLongMapConfigDeserializer();
-//            case "StringToDouble" -> new StringToDoubleMapConfigDeserializer();
+            case "StringToDouble" -> new StringToDoubleMapConfigDeserializer();
             default -> throw new IllegalArgumentException("Unknown deserializer: " + deserializer);
         };
     }

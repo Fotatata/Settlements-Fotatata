@@ -1,6 +1,7 @@
 package dev.breezes.settlements.bootstrap.event;
 
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
+import dev.breezes.settlements.infrastructure.minecraft.entities.client.VillagerFishingHookRenderer;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.VillagerRenderer;
 import net.minecraft.client.renderer.entity.WolfRenderer;
@@ -22,6 +23,7 @@ public class ClientModEvents {
         // TODO: replace with custom model when ready
         EntityRenderers.register(EntityRegistry.BASE_VILLAGER.get(), VillagerRenderer::new);
         EntityRenderers.register(EntityRegistry.SETTLEMENTS_WOLF.get(), WolfRenderer::new);
+        EntityRenderers.register(EntityRegistry.VILLAGER_FISHING_HOOK.get(), VillagerFishingHookRenderer::new);
 
         ModContainer container = ModLoadingContext.get().getActiveContainer();
         container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);

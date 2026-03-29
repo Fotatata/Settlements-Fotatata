@@ -24,6 +24,8 @@ import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSoulSandConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.farming.HarvestSugarCaneConfig;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingBehavior;
+import dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing.FishingConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreBehavior;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.smelting.blastore.BlastOreConfig;
 import dev.breezes.settlements.application.ai.behavior.usecases.villager.support.RepairIronGolemBehavior;
@@ -225,7 +227,8 @@ public final class CustomBehaviorPackages {
             // customBehaviorWeightMap.put(new MakeCakeBehavior(), customGoalWeight);
         } else if (profession == VillagerProfession.FISHERMAN) {
             // customBehaviorWeightMap.put(new TameCatBehavior(), customGoalWeight);
-            // customBehaviorWeightMap.put(new FishingBehavior(), customGoalWeight);
+            addTrackedChoiceBehavior(new FishingBehavior(ConfigFactory.create(FishingConfig.class)),
+                    workChoiceBehaviors, customGoalWeight, trackedCustomBehaviors, Activity.WORK);
         } else if (profession == VillagerProfession.FLETCHER) {
             // customBehaviorWeightMap.put(new CollectArrowsBehavior(), customGoalWeight);
             // customBehaviorWeightMap.put(new MakeTippedArrowsBehavior(),

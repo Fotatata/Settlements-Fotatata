@@ -1,0 +1,411 @@
+package dev.breezes.settlements.application.ai.behavior.usecases.villager.fishing;
+
+import dev.breezes.settlements.application.ai.behavior.runtime.StateMachineBehavior;
+import dev.breezes.settlements.application.ai.behavior.workflow.staged.StagedStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.BehaviorContext;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.BehaviorStateType;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.TargetState;
+import dev.breezes.settlements.application.ai.behavior.workflow.state.registry.targets.Targetable;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.BehaviorStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.StageKey;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.StepResult;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.TimeBasedStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.NavigateToTargetStep;
+import dev.breezes.settlements.application.ai.behavior.workflow.steps.concrete.StayCloseStep;
+import dev.breezes.settlements.application.ui.behavior.snapshot.BehaviorDescriptor;
+import dev.breezes.settlements.bootstrap.registry.sounds.SoundRegistry;
+import dev.breezes.settlements.domain.ai.conditions.NearbyWaterExistsCondition;
+import dev.breezes.settlements.domain.entities.Expertise;
+import dev.breezes.settlements.domain.entities.ISettlementsVillager;
+import dev.breezes.settlements.domain.fishing.FishCatchEntry;
+import dev.breezes.settlements.domain.inventory.VillagerInventory;
+import dev.breezes.settlements.domain.time.Ticks;
+import dev.breezes.settlements.domain.world.blocks.PhysicalBlock;
+import dev.breezes.settlements.domain.world.location.Location;
+import dev.breezes.settlements.infrastructure.minecraft.entities.projectiles.VillagerFishingHook;
+import dev.breezes.settlements.infrastructure.minecraft.entities.villager.BaseVillager;
+import dev.breezes.settlements.shared.util.RandomUtil;
+import lombok.CustomLog;
+import lombok.Getter;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Map;
+import java.util.Optional;
+
+@CustomLog
+public class FishingBehavior extends StateMachineBehavior {
+
+    private static final double NAVIGATION_CLOSE_ENOUGH_DISTANCE = 5.0;
+    private static final float NAVIGATION_SPEED = 0.5f;
+    private static final int NAVIGATION_COMPLETION_DISTANCE = 3;
+    private static final double CAST_HOOK_DELAY_SECONDS = 0.3;
+    private static final int HOOK_MAX_LIFETIME_BUFFER_SECONDS = 15;
+    private static final double COLLECT_DISTANCE_SQUARED = 9.0;
+    private static final int MAX_CAST_RETRIES = 5;
+
+    private enum FishingStage implements StageKey {
+        NAVIGATE_TO_WATER,
+        CAST_LINE,
+        WAIT_FOR_BITE,
+        REEL_IN,
+        COLLECT_FISH,
+        END;
+    }
+
+    private final FishingConfig config;
+
+    @Getter
+    private final BehaviorDescriptor behaviorDescriptor;
+
+    private final NearbyWaterExistsCondition<BaseVillager> nearbyWaterExistsCondition;
+
+    // Runtime state
+    @Nullable
+    private BlockPos waterTarget;
+    @Nullable
+    private VillagerFishingHook activeHook;
+    @Nullable
+    private Entity fishedEntity;
+    @Nullable
+    private FishCatchEntry caughtFishEntry;
+    @Nullable
+    private ItemStack caughtItem;
+    private int castRetryCount;
+
+    public FishingBehavior(@Nonnull FishingConfig config) {
+        super(log, config.createPreconditionCheckCooldownTickable(), config.createBehaviorCooldownTickable());
+
+        this.config = config;
+        this.behaviorDescriptor = BehaviorDescriptor.builder()
+                .displayNameKey("ui.settlements.behavior.fishing")
+                .iconItemId(ResourceLocation.withDefaultNamespace("fishing_rod"))
+                .displaySuffix(null)
+                .build();
+
+        this.nearbyWaterExistsCondition = NearbyWaterExistsCondition.<BaseVillager>builder()
+                .rangeHorizontal(config.scanRangeHorizontal())
+                .rangeVertical(config.scanRangeVertical())
+                .build();
+        this.preconditions.add(this.nearbyWaterExistsCondition);
+
+        this.initializeStateMachine(this.createControlStep(), FishingStage.END);
+    }
+
+    @Override
+    protected void onBehaviorStart(@Nonnull Level world, @Nonnull BaseVillager villager,
+                                   @Nonnull BehaviorContext context) {
+        this.waterTarget = this.nearbyWaterExistsCondition.getWaterTarget().orElse(null);
+        if (this.waterTarget == null) {
+            log.behaviorWarn("Fishing behavior started without a water target; stopping");
+            this.requestStop();
+            return;
+        }
+
+        Optional<BlockPos> shorePosition = this.nearbyWaterExistsCondition.getShorePosition();
+        if (shorePosition.isEmpty()) {
+            log.behaviorWarn("Fishing behavior started without a shore position for water target {}; stopping",
+                    this.waterTarget);
+            this.requestStop();
+            return;
+        }
+
+        PhysicalBlock shoreBlock = PhysicalBlock.of(
+                Location.of(shorePosition.get(), villager.level()),
+                villager.level().getBlockState(shorePosition.get()));
+        context.setState(BehaviorStateType.TARGET, TargetState.of(Targetable.fromBlock(shoreBlock)));
+
+        log.behaviorStatus("Starting fishing behavior at shore position {} and water position {}",
+                shorePosition, this.waterTarget);
+        this.castRetryCount = 0;
+    }
+
+    @Override
+    protected void onBehaviorStop(@Nonnull Level world, @Nonnull BaseVillager villager) {
+        if (this.activeHook != null && !this.activeHook.isRemoved()) {
+            this.activeHook.discard();
+        }
+        if (this.fishedEntity != null && !this.fishedEntity.isRemoved()) {
+            this.fishedEntity.discard();
+        }
+
+        villager.clearHeldItem();
+        this.waterTarget = null;
+        this.activeHook = null;
+        this.fishedEntity = null;
+        this.caughtFishEntry = null;
+        this.caughtItem = null;
+        this.castRetryCount = 0;
+    }
+
+    @Override
+    protected boolean preTickGuard(int delta,
+                                   @Nonnull Level world,
+                                   @Nonnull BaseVillager villager,
+                                   @Nonnull BehaviorContext context) {
+        if (this.activeHook == null) {
+            return true;
+        }
+        if (!this.activeHook.isRemoved()) {
+            return true;
+        }
+        return this.activeHook.isMissedWater() && this.castRetryCount < MAX_CAST_RETRIES;
+    }
+
+    private StagedStep createControlStep() {
+        return StagedStep.builder()
+                .name("FishingBehavior")
+                .initialStage(FishingStage.NAVIGATE_TO_WATER)
+                .stageStepMap(Map.of(
+                        FishingStage.NAVIGATE_TO_WATER, this.createNavigateStep(),
+                        FishingStage.CAST_LINE, this.createCastLineStep(),
+                        FishingStage.WAIT_FOR_BITE, this.createWaitForBiteStep(),
+                        FishingStage.REEL_IN, this.createReelInStep(),
+                        FishingStage.COLLECT_FISH, this.createCollectFishStep()
+                ))
+                .nextStage(FishingStage.END)
+                .build();
+    }
+
+    /**
+     * Walk to the shore position, wait half a second, then cast.
+     */
+    private BehaviorStep createNavigateStep() {
+        TimeBasedStep arrivedStep = TimeBasedStep.builder()
+                .withTickable(Ticks.seconds(0.5).asTickable())
+                .onEnd(context -> StepResult.transition(FishingStage.CAST_LINE))
+                .build();
+
+        return StayCloseStep.builder()
+                .closeEnoughDistance(NAVIGATION_CLOSE_ENOUGH_DISTANCE)
+                .navigateStep(new NavigateToTargetStep(NAVIGATION_SPEED, NAVIGATION_COMPLETION_DISTANCE))
+                .actionStep(arrivedStep)
+                .build();
+    }
+
+    /**
+     * Hold rod, spawn hook aimed at water, play cast sound.
+     * Placeholder for animation (no-op); transitions to WAIT_FOR_BITE.
+     */
+    private BehaviorStep createCastLineStep() {
+        return TimeBasedStep.builder()
+                .withTickable(Ticks.seconds(1).asTickable())
+                .onStart(context -> {
+                    ISettlementsVillager villager = context.getInitiator();
+                    villager.setHeldItem(Items.FISHING_ROD.getDefaultInstance());
+                    this.lookAtWater(villager);
+                    return StepResult.noOp();
+                })
+                .addKeyFrame(Ticks.seconds(CAST_HOOK_DELAY_SECONDS), context -> {
+                    if (this.waterTarget == null) {
+                        log.behaviorWarn("No water target set during cast — stopping");
+                        return StepResult.fail("NO_WATER_TARGET");
+                    }
+                    BaseVillager villager = context.getInitiator().getMinecraftEntity();
+                    return this.castHook(villager);
+                })
+                .onEnd(context -> StepResult.transition(FishingStage.WAIT_FOR_BITE))
+                .build();
+    }
+
+    /**
+     * Wait for the hook's catchingFish() logic to signal a bite.
+     * Polls hasBitten() every 5 ticks. Times out after maxWaitTimeSeconds.
+     */
+    private BehaviorStep createWaitForBiteStep() {
+        return TimeBasedStep.builder()
+                .withTickable(Ticks.seconds(config.maxWaitTimeSeconds()).asTickable())
+                .addPeriodicStep(5, context -> {
+                    if (this.activeHook != null && this.activeHook.isRemoved() && this.activeHook.isMissedWater()) {
+                        if (this.castRetryCount < MAX_CAST_RETRIES) {
+                            this.castRetryCount++;
+                            log.behaviorStatus("Hook missed water (attempt {}/{}), retrying",
+                                    this.castRetryCount, MAX_CAST_RETRIES);
+                            this.activeHook = null;
+                            return this.castHook(context.getInitiator().getMinecraftEntity());
+                        }
+                        log.behaviorWarn("Hook missed water, no retries left");
+                        return StepResult.complete();
+                    }
+
+                    if (this.activeHook != null && this.activeHook.hasBitten()) {
+                        SoundRegistry.FISHING_SPLASH.playGlobally(
+                                Location.fromEntity(this.activeHook, false),
+                                SoundSource.NEUTRAL);
+                        log.behaviorStatus("Fish has bitten the hook!");
+                        return StepResult.transition(FishingStage.REEL_IN);
+                    }
+
+                    return StepResult.noOp();
+                })
+                .addPeriodicStep(Ticks.of(20).getTicksAsInt(), context -> {
+                    this.lookAtWater(context.getInitiator());
+                    return StepResult.noOp();
+                })
+                .onEnd(context -> {
+                    // No fish caught within the specified time
+                    if (this.activeHook != null && !this.activeHook.isRemoved()) {
+                        this.activeHook.discard();
+                        this.activeHook = null;
+                    }
+                    return StepResult.complete();
+                })
+                .build();
+    }
+
+    /**
+     * Reel hook, spawn flying visual entity, clear rod.
+     * Placeholder for animation (no-op); transitions to COLLECT_FISH.
+     */
+    private BehaviorStep createReelInStep() {
+        return TimeBasedStep.builder()
+                .withTickable(Ticks.seconds(1.5).asTickable())
+                .onStart(context -> {
+                    // Display happy effects
+                    BaseVillager villager = context.getInitiator().getMinecraftEntity();
+                    Location villagerHead = Location.fromEntity(villager, true);
+                    villagerHead.displayParticles(ParticleTypes.HAPPY_VILLAGER, 8, 0.3, 0.2, 0.3, 0.01);
+                    villagerHead.playSound(SoundEvents.VILLAGER_YES, 0.8f, 1.0f, SoundSource.NEUTRAL);
+
+                    this.lookAtWater(context.getInitiator());
+                    return StepResult.noOp();
+                })
+                .addKeyFrame(Ticks.seconds(0.5), context -> {
+                    if (this.activeHook == null || this.activeHook.isRemoved()) {
+                        return StepResult.noOp();
+                    }
+
+                    Location hookLocation = Location.fromEntity(this.activeHook, false);
+                    this.fishedEntity = this.activeHook.reelIn().orElse(null);
+                    this.caughtFishEntry = this.activeHook.getSelectedCatchEntry();
+                    this.caughtItem = this.fishToItem(this.caughtFishEntry).orElse(null);
+                    this.activeHook = null;
+
+                    BaseVillager villager = context.getInitiator().getMinecraftEntity();
+                    SoundRegistry.FISHING_SPLASH.playGlobally(hookLocation, SoundSource.NEUTRAL);
+                    SoundRegistry.FISHING_REEL.playGlobally(Location.fromEntity(villager, false), SoundSource.NEUTRAL);
+                    return StepResult.noOp();
+                })
+                .onEnd(context -> {
+                    context.getInitiator().clearHeldItem();
+                    return StepResult.transition(FishingStage.COLLECT_FISH);
+                })
+                .build();
+    }
+
+    /**
+     * Wait for the visual fish entity to arrive near the villager, then
+     * store the corresponding fish item in the villager's inventory.
+     */
+    private BehaviorStep createCollectFishStep() {
+        return TimeBasedStep.builder()
+                .withTickable(Ticks.seconds(3).asTickable())
+                .addPeriodicStep(5, context -> {
+                    if (this.fishedEntity == null || this.fishedEntity.isRemoved()) {
+                        return collectAndComplete(context);
+                    }
+                    BaseVillager villager = context.getInitiator().getMinecraftEntity();
+                    if (this.fishedEntity.distanceToSqr(villager) <= COLLECT_DISTANCE_SQUARED) {
+                        this.fishedEntity.discard();
+                        return collectAndComplete(context);
+                    }
+                    return StepResult.noOp();
+                })
+                .onEnd(context -> {
+                    if (this.fishedEntity != null && !this.fishedEntity.isRemoved()) {
+                        this.fishedEntity.discard();
+                    }
+                    return collectAndComplete(context);
+                })
+                .build();
+    }
+
+    private void lookAtWater(@Nonnull ISettlementsVillager villager) {
+        if (this.waterTarget != null) {
+            villager.getMinecraftEntity().getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(this.waterTarget));
+        }
+    }
+
+    @Nonnull
+    private StepResult castHook(@Nonnull BaseVillager villager) {
+        if (this.waterTarget == null) {
+            log.behaviorWarn("No water target set during cast, stopping behavior");
+            return StepResult.fail("NO_WATER_TARGET");
+        }
+
+        int baseMinBiteTicks = Ticks.seconds(this.config.minWaitTimeSeconds()).getTicksAsInt();
+        int baseMaxBiteTicks = Ticks.seconds(this.config.maxWaitTimeSeconds()).getTicksAsInt();
+
+        Expertise expertise = villager.getExpertise();
+        double fishingTimeShortenScale = this.config.expertiseWaitTimeScale().getOrDefault(expertise.getConfigName(), 1.0);
+
+        // Calculate bite & removal time
+        int minBiteTicks = Math.max(1, (int) Math.round(baseMinBiteTicks * fishingTimeShortenScale));
+        int maxBiteTicks = Math.max(minBiteTicks, (int) Math.round(baseMaxBiteTicks * fishingTimeShortenScale));
+        int biteTimeTicks = RandomUtil.randomInt(minBiteTicks, maxBiteTicks, true);
+        int maxLifetimeTicks = baseMaxBiteTicks + Ticks.seconds(HOOK_MAX_LIFETIME_BUFFER_SECONDS).getTicksAsInt();
+
+        // Calculate hook velocity
+        double retryProgress = (this.castRetryCount - 1) / (double) (MAX_CAST_RETRIES - 1);
+        double extraHorizontalRandomness = this.castRetryCount <= 0
+                ? 0.0
+                : 0.05 + 0.2 * retryProgress;
+        double extraVerticalVelocity = this.castRetryCount * 0.05;
+
+        // Cast the hook
+        this.activeHook = new VillagerFishingHook(villager, this.waterTarget, biteTimeTicks, maxLifetimeTicks,
+                extraHorizontalRandomness, extraVerticalVelocity);
+        this.activeHook.castIntoWorld();
+        SoundRegistry.FISHING_CAST.playGlobally(Location.fromEntity(villager, true), SoundSource.NEUTRAL);
+
+        log.behaviorStatus("Casted fishing hook, fish will appear in {} ticks", biteTimeTicks);
+        return StepResult.noOp();
+    }
+
+    private StepResult collectAndComplete(@Nonnull BehaviorContext context) {
+        if (this.caughtItem != null && !this.caughtItem.isEmpty()) {
+            VillagerInventory inventory = context.getInitiator().getSettlementsInventory();
+            inventory.addItem(this.caughtItem);
+            SoundRegistry.ITEM_POP_IN.playGlobally(
+                    Location.fromEntity(context.getInitiator().getMinecraftEntity(), false),
+                    SoundSource.NEUTRAL);
+            log.behaviorStatus("Collected fish: {}", this.caughtItem);
+        }
+        this.caughtItem = null;
+        this.fishedEntity = null;
+        this.caughtFishEntry = null;
+        return StepResult.complete();
+    }
+
+    /**
+     * Resolves a caught item from the selected datapack entry.
+     */
+    private Optional<ItemStack> fishToItem(@Nullable FishCatchEntry catchEntry) {
+        if (catchEntry == null) {
+            return Optional.empty();
+        }
+
+        ResourceLocation itemId = ResourceLocation.tryParse(catchEntry.getItemId());
+        if (itemId == null) {
+            log.warn("Invalid fish catch item id '{}'", catchEntry.getItemId());
+            return Optional.empty();
+        }
+
+        return BuiltInRegistries.ITEM.getOptional(itemId)
+                .filter(item -> item != Items.AIR)
+                .map(ItemStack::new);
+    }
+
+}

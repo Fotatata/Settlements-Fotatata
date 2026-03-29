@@ -59,22 +59,22 @@ public abstract class StateMachineBehavior extends AbstractBehavior<BaseVillager
 
     @Override
     public final void doStart(@Nonnull Level world,
-                              @Nonnull BaseVillager entity) {
+                              @Nonnull BaseVillager villager) {
         this.requireInitialized();
 
-        this.context = new BehaviorContext(entity);
-        this.onBehaviorStart(world, entity, this.context);
+        this.context = new BehaviorContext(villager);
+        this.onBehaviorStart(world, villager, this.context);
         Objects.requireNonNull(this.controlStep).reset();
     }
 
     @Override
     public final void tickBehavior(int delta,
                                    @Nonnull Level world,
-                                   @Nonnull BaseVillager entity) {
+                                   @Nonnull BaseVillager villager) {
         this.requireInitialized();
 
         BehaviorContext context = this.requireContext();
-        if (!this.preTickGuard(delta, world, entity, context)) {
+        if (!this.preTickGuard(delta, world, villager, context)) {
             throw new StopBehaviorException("Behavior '%s' pre-tick guard failed".formatted(this.getClass().getSimpleName()));
         }
 
@@ -85,22 +85,22 @@ public abstract class StateMachineBehavior extends AbstractBehavior<BaseVillager
 
     @Override
     public final void doStop(@Nonnull Level world,
-                             @Nonnull BaseVillager entity) {
+                             @Nonnull BaseVillager villager) {
         this.requireInitialized();
 
-        this.onBehaviorStop(world, entity);
+        this.onBehaviorStop(world, villager);
         this.context = null;
         Objects.requireNonNull(this.controlStep).reset();
     }
 
     protected void onBehaviorStart(@Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext context) {
         // Empty by default, optionally overrideable by concrete behaviors
     }
 
     protected void onBehaviorStop(@Nonnull Level world,
-                                  @Nonnull BaseVillager entity) {
+                                  @Nonnull BaseVillager villager) {
         // Empty by default, optionally overrideable by concrete behaviors
     }
 
@@ -113,7 +113,7 @@ public abstract class StateMachineBehavior extends AbstractBehavior<BaseVillager
 
     /**
      * Returns precondition status with LAST-KNOWN semantics.
-     *
+     * <p>
      * This uses cached results from the behavior precondition evaluation cycle
      * (see {@link AbstractBehavior#tickPreconditions(int, Level, Entity)} behavior flow),
      * so it is not guaranteed to represent a just-in-time recomputation at the
@@ -139,7 +139,7 @@ public abstract class StateMachineBehavior extends AbstractBehavior<BaseVillager
 
     protected boolean preTickGuard(int delta,
                                    @Nonnull Level world,
-                                   @Nonnull BaseVillager entity,
+                                   @Nonnull BaseVillager villager,
                                    @Nonnull BehaviorContext context) {
         return true;
     }

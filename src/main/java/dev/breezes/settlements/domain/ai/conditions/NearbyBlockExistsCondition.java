@@ -11,7 +11,6 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 @CustomLog
 public class NearbyBlockExistsCondition<E extends Entity, B extends Block> implements ICondition<E> {
@@ -66,8 +65,9 @@ public class NearbyBlockExistsCondition<E extends Entity, B extends Block> imple
         return this.targets.size() >= this.minimumTargetCount;
     }
 
+    @Nonnull
     public List<BlockPos> getTargets() {
-        return Optional.of(this.targets)
-                .orElse(Collections.emptyList());
+        return Collections.unmodifiableList(this.targets);
     }
+
 }

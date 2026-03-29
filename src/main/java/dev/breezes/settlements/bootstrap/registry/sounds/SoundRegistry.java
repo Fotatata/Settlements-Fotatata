@@ -26,6 +26,9 @@ public enum SoundRegistry {
     MILK_COW(SoundEventPlayable.of(SoundEvents.COW_MILK, 1.0f, 1.0f)),
     OPEN_FENCE_GATE(SoundEventPlayable.of(SoundEvents.FENCE_GATE_OPEN, 1.0f, 1.0f)),
     CLOSE_FENCE_GATE(SoundEventPlayable.of(SoundEvents.FENCE_GATE_CLOSE, 1.0f, 1.0f)),
+    FISHING_CAST(SoundEventPlayable.of(SoundEvents.FISHING_BOBBER_THROW, 0.5f, 0.4f)),
+    FISHING_SPLASH(SoundEventPlayable.of(SoundEvents.FISHING_BOBBER_SPLASH, 0.25f, 1.0f)),
+    FISHING_REEL(SoundEventPlayable.of(SoundEvents.FISHING_BOBBER_RETRIEVE, 1.0f, 1.0f)),
     ;
 
     // TODO: this might not be just a vanilla sound, but a custom/modded sound
