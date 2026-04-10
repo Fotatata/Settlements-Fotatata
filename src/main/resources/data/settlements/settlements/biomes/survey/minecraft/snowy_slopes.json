@@ -1,0 +1,7 @@
+{
+  "biome": "minecraft:snowy_slopes",
+  "resource_densities": {
+    "FROZEN": 0.8
+  },
+  "water_type": null
+}

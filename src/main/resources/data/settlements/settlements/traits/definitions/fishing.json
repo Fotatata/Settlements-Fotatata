@@ -1,0 +1,8 @@
+{
+  "id": "settlements:settlement_traits/fishing",
+  "display_info": {
+    "display_name": "Fishing",
+    "description": "Waterways and daily catches keep this settlement fed and busy.",
+    "icon_item_id": "minecraft:fishing_rod"
+  }
+}

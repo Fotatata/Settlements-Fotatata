@@ -1,0 +1,17 @@
+{
+  "id": "settlements:house",
+  "placement_priority": 10,
+  "zone_tier_min": 2,
+  "zone_tier_max": 4,
+  "requires_road_frontage": false,
+  "requires_resources": [],
+  "forbidden_resources": [],
+  "trait_affinities": {},
+  "minimum_rank": "FLAVOR",
+  "footprint_min_width": 5,
+  "footprint_max_width": 9,
+  "footprint_min_depth": 5,
+  "footprint_max_depth": 9,
+  "npc_profession": null,
+  "npc_count": 0
+}

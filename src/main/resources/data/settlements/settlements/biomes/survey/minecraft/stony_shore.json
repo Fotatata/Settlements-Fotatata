@@ -1,0 +1,7 @@
+{
+  "biome": "minecraft:stony_shore",
+  "resource_densities": {
+    "STONE": 0.7
+  },
+  "water_type": "OCEAN"
+}

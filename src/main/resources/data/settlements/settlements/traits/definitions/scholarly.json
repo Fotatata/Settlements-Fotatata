@@ -1,0 +1,8 @@
+{
+  "id": "settlements:settlement_traits/scholarly",
+  "display_info": {
+    "display_name": "Scholarly",
+    "description": "Study, record-keeping, and teaching are prized in this community.",
+    "icon_item_id": "minecraft:bookshelf"
+  }
+}

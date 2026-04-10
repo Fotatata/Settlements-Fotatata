@@ -72,6 +72,46 @@ public class ApacheLogger implements ILogger {
     }
 
     @Override
+    public void worldgenStatus(@Nonnull String format, @Nonnull Object... args) {
+        this.info(format, args);
+    }
+
+    @Override
+    public void worldgenWarn(@Nonnull String format, @Nonnull Object... args) {
+        this.warn(format, args);
+    }
+
+    @Override
+    public void worldgenError(@Nonnull String format, @Nonnull Object... args) {
+        this.error(format, args);
+    }
+
+    @Override
+    public void worldgenTrace(@Nonnull String format, @Nonnull Object... args) {
+        this.trace(format, args);
+    }
+
+    @Override
+    public void resourceLoadingStatus(@Nonnull String format, @Nonnull Object... args) {
+        this.info(format, args);
+    }
+
+    @Override
+    public void resourceLoadingWarn(@Nonnull String format, @Nonnull Object... args) {
+        this.warn(format, args);
+    }
+
+    @Override
+    public void resourceLoadingError(@Nonnull String format, @Nonnull Object... args) {
+        this.error(format, args);
+    }
+
+    @Override
+    public void resourceLoadingTrace(@Nonnull String format, @Nonnull Object... args) {
+        this.trace(format, args);
+    }
+
+    @Override
     public void trace(@Nonnull String format, @Nonnull Object... args) {
         // TODO: re-enable trace logging
         this.logger.trace(format, args);

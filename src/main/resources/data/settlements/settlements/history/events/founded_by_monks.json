@@ -1,0 +1,26 @@
+{
+  "id": "settlements:settlement_events/founded_by_monks",
+  "category": "founding",
+  "time_horizon_min": 100,
+  "time_horizon_max": 199,
+  "exclusive_tags": [
+    "FOUNDING"
+  ],
+  "probability_weight": 1.0,
+  "preconditions": {
+    "min_trait_weights": {},
+    "required_resource_tags": [],
+    "required_water_features": [],
+    "min_population": 0
+  },
+  "trait_modifiers": {
+    "settlements:settlement_traits/spiritual": 0.25,
+    "settlements:settlement_traits/scholarly": 0.15,
+    "settlements:settlement_traits/defense": -0.1
+  },
+  "visual_markers": [
+    "bell_tower",
+    "meditation_garden"
+  ],
+  "narrative_text": "A quiet religious order founded the settlement around study and devotion."
+}

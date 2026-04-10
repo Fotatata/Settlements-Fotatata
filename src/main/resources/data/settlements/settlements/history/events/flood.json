@@ -1,0 +1,28 @@
+{
+  "id": "settlements:settlement_events/flood",
+  "category": "disaster",
+  "time_horizon_min": 210,
+  "time_horizon_max": 260,
+  "exclusive_tags": [],
+  "probability_weight": 1.0,
+  "preconditions": {
+    "min_trait_weights": {},
+    "required_resource_tags": [],
+    "required_water_features": [
+      "RIVER",
+      "OCEAN",
+      "LAKE"
+    ],
+    "min_population": 0
+  },
+  "trait_modifiers": {
+    "settlements:settlement_traits/fishing": -0.15,
+    "settlements:settlement_traits/farming": -0.1,
+    "settlements:settlement_traits/defense": 0.1
+  },
+  "visual_markers": [
+    "flood_markers",
+    "raised_walkways"
+  ],
+  "narrative_text": "Floodwaters once overwhelmed the settlement, leaving lasting caution behind."
+}

@@ -1,0 +1,8 @@
+{
+  "id": "settlements:settlement_traits/craft",
+  "display_info": {
+    "display_name": "Craft",
+    "description": "Artisans and workshops transform raw materials into valued goods.",
+    "icon_item_id": "minecraft:smithing_table"
+  }
+}

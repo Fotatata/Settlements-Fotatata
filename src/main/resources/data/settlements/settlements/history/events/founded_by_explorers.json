@@ -1,0 +1,26 @@
+{
+  "id": "settlements:settlement_events/founded_by_explorers",
+  "category": "founding",
+  "time_horizon_min": 100,
+  "time_horizon_max": 199,
+  "exclusive_tags": [
+    "FOUNDING"
+  ],
+  "probability_weight": 1.0,
+  "preconditions": {
+    "min_trait_weights": {},
+    "required_resource_tags": [],
+    "required_water_features": [],
+    "min_population": 0
+  },
+  "trait_modifiers": {
+    "settlements:settlement_traits/trade": 0.15,
+    "settlements:settlement_traits/scholarly": 0.1,
+    "settlements:settlement_traits/craft": 0.05
+  },
+  "visual_markers": [
+    "explorer_camp",
+    "flagpole"
+  ],
+  "narrative_text": "An expedition discovered this site and chose to remain."
+}

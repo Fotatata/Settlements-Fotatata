@@ -1,0 +1,8 @@
+{
+  "id": "settlements:settlement_traits/pastoral",
+  "display_info": {
+    "display_name": "Pastoral",
+    "description": "Herding, grazing, and animal husbandry support this settlement.",
+    "icon_item_id": "minecraft:lead"
+  }
+}

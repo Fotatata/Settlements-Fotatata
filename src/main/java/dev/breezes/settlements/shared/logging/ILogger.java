@@ -39,6 +39,28 @@ public interface ILogger {
     void sensorTrace(@Nonnull String format, @Nonnull Object... args);
 
     /*
+     * Logging for world generation
+     */
+    void worldgenStatus(@Nonnull String format, @Nonnull Object... args);
+
+    void worldgenWarn(@Nonnull String format, @Nonnull Object... args);
+
+    void worldgenError(@Nonnull String format, @Nonnull Object... args);
+
+    void worldgenTrace(@Nonnull String format, @Nonnull Object... args);
+
+    /*
+     * Logging for resource loading
+     */
+    void resourceLoadingStatus(@Nonnull String format, @Nonnull Object... args);
+
+    void resourceLoadingWarn(@Nonnull String format, @Nonnull Object... args);
+
+    void resourceLoadingError(@Nonnull String format, @Nonnull Object... args);
+
+    void resourceLoadingTrace(@Nonnull String format, @Nonnull Object... args);
+
+    /*
      * Convenience methods for logging at different levels
      */
     void trace(@Nonnull String format, @Nonnull Object... args);

@@ -1,0 +1,8 @@
+{
+  "id": "settlements:settlement_traits/ancient",
+  "display_info": {
+    "display_name": "Ancient",
+    "description": "Old stones, ruins, and long memory lend this place unusual character.",
+    "icon_item_id": "minecraft:chiseled_stone_bricks"
+  }
+}

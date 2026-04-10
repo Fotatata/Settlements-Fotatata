@@ -1,0 +1,8 @@
+{
+  "biome": "minecraft:mangrove_swamp",
+  "resource_densities": {
+    "LUMBER": 0.5,
+    "FRESHWATER": 0.3
+  },
+  "water_type": null
+}

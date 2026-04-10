@@ -1,0 +1,8 @@
+{
+  "biome": "minecraft:taiga",
+  "resource_densities": {
+    "LUMBER": 0.6
+  },
+  "water_type": null,
+  "template_tags": ["taiga"]
+}

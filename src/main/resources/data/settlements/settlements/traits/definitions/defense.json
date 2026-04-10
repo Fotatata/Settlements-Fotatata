@@ -1,0 +1,8 @@
+{
+  "id": "settlements:settlement_traits/defense",
+  "display_info": {
+    "display_name": "Defense",
+    "description": "Watchfulness, drills, and fortifications are central here.",
+    "icon_item_id": "minecraft:shield"
+  }
+}

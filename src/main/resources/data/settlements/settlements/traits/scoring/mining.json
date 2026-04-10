@@ -1,0 +1,14 @@
+{
+  "trait": "settlements:settlement_traits/mining",
+  "base_score": 0.0,
+  "resource_tag_weights": {
+    "STONE": 0.4,
+    "ORE_BEARING": 0.35
+  },
+  "required_tags": [],
+  "veto_tags": [],
+  "water_feature_weights": {},
+  "biome_weights": {},
+  "elevation_delta_weight": 0.2,
+  "elevation_delta_normalization": 60.0
+}

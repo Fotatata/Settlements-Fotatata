@@ -1,0 +1,8 @@
+{
+  "id": "settlements:settlement_traits/spiritual",
+  "display_info": {
+    "display_name": "Spiritual",
+    "description": "Shrines, rituals, and sacred traditions shape the settlement's identity.",
+    "icon_item_id": "minecraft:candle"
+  }
+}

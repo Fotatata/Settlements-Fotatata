@@ -1,0 +1,8 @@
+{
+  "biome": "minecraft:deep_frozen_ocean",
+  "resource_densities": {
+    "COASTAL": 0.8,
+    "FROZEN": 0.6
+  },
+  "water_type": "OCEAN"
+}

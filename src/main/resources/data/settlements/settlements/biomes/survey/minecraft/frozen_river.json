@@ -1,0 +1,8 @@
+{
+  "biome": "minecraft:frozen_river",
+  "resource_densities": {
+    "FRESHWATER": 0.8,
+    "FROZEN": 0.5
+  },
+  "water_type": "RIVER"
+}

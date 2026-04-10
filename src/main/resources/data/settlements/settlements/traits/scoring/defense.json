@@ -1,0 +1,13 @@
+{
+  "trait": "settlements:settlement_traits/defense",
+  "base_score": 0.1,
+  "resource_tag_weights": {
+    "STONE": 0.15
+  },
+  "required_tags": [],
+  "veto_tags": [],
+  "water_feature_weights": {},
+  "biome_weights": {},
+  "elevation_delta_weight": 0.3,
+  "elevation_delta_normalization": 60.0
+}

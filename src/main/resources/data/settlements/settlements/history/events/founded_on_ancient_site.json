@@ -1,0 +1,26 @@
+{
+  "id": "settlements:settlement_events/founded_on_ancient_site",
+  "category": "founding",
+  "time_horizon_min": 100,
+  "time_horizon_max": 199,
+  "exclusive_tags": [
+    "FOUNDING"
+  ],
+  "probability_weight": 1.0,
+  "preconditions": {
+    "min_trait_weights": {},
+    "required_resource_tags": [],
+    "required_water_features": [],
+    "min_population": 0
+  },
+  "trait_modifiers": {
+    "settlements:settlement_traits/ancient": 0.25,
+    "settlements:settlement_traits/scholarly": 0.1,
+    "settlements:settlement_traits/spiritual": 0.1
+  },
+  "visual_markers": [
+    "ruined_foundations",
+    "stone_relics"
+  ],
+  "narrative_text": "Settlers raised homes among the remains of something much older."
+}

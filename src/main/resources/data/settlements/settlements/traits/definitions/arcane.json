@@ -1,0 +1,8 @@
+{
+  "id": "settlements:settlement_traits/arcane",
+  "display_info": {
+    "display_name": "Arcane",
+    "description": "Strange knowledge and uncanny practices linger around this settlement.",
+    "icon_item_id": "minecraft:enchanting_table"
+  }
+}

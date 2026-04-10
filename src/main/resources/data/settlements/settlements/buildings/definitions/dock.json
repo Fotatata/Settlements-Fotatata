@@ -1,0 +1,22 @@
+{
+  "id": "settlements:dock",
+  "placement_priority": 80,
+  "zone_tier_min": 3,
+  "zone_tier_max": 4,
+  "requires_road_frontage": false,
+  "requires_resources": [
+    "FRESHWATER",
+    "COASTAL"
+  ],
+  "forbidden_resources": [],
+  "trait_affinities": {
+    "settlements:settlement_traits/fishing": 0.8
+  },
+  "minimum_rank": "FLAVOR",
+  "footprint_min_width": 7,
+  "footprint_max_width": 11,
+  "footprint_min_depth": 9,
+  "footprint_max_depth": 13,
+  "npc_profession": null,
+  "npc_count": 0
+}

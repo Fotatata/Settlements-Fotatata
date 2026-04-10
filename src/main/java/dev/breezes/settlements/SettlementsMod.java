@@ -1,11 +1,12 @@
 package dev.breezes.settlements;
 
-import dev.breezes.settlements.infrastructure.config.annotations.ConfigAnnotationProcessor;
-import dev.breezes.settlements.infrastructure.network.core.PacketRegistry;
 import dev.breezes.settlements.bootstrap.registry.components.DataComponentRegistry;
-import dev.breezes.settlements.bootstrap.registry.tabs.CreativeTabRegistry;
 import dev.breezes.settlements.bootstrap.registry.entities.EntityRegistry;
 import dev.breezes.settlements.bootstrap.registry.items.ItemRegistry;
+import dev.breezes.settlements.bootstrap.registry.structures.StructureRegistry;
+import dev.breezes.settlements.bootstrap.registry.tabs.CreativeTabRegistry;
+import dev.breezes.settlements.infrastructure.config.annotations.ConfigAnnotationProcessor;
+import dev.breezes.settlements.infrastructure.network.core.PacketRegistry;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
@@ -27,6 +28,7 @@ public final class SettlementsMod {
         CreativeTabRegistry.register(modEventBus);
         EntityRegistry.register(modEventBus);
         DataComponentRegistry.register(modEventBus);
+        StructureRegistry.register(modEventBus);
 
         processAnnotations(modEventBus);
     }

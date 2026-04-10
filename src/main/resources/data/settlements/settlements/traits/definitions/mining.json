@@ -1,0 +1,8 @@
+{
+  "id": "settlements:settlement_traits/mining",
+  "display_info": {
+    "display_name": "Mining",
+    "description": "Stone, ore, and quarry work shape the life of this settlement.",
+    "icon_item_id": "minecraft:iron_pickaxe"
+  }
+}

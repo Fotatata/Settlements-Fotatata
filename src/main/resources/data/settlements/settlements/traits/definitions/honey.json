@@ -1,0 +1,8 @@
+{
+  "id": "settlements:settlement_traits/honey",
+  "display_info": {
+    "display_name": "Honey",
+    "description": "Apiaries, flowers, and sweet goods are local specialties.",
+    "icon_item_id": "minecraft:honeycomb"
+  }
+}

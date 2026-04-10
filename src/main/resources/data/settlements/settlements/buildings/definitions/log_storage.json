@@ -1,0 +1,21 @@
+{
+  "id": "settlements:log_storage",
+  "placement_priority": 40,
+  "zone_tier_min": 3,
+  "zone_tier_max": 4,
+  "requires_road_frontage": false,
+  "requires_resources": [
+    "LUMBER"
+  ],
+  "forbidden_resources": [],
+  "trait_affinities": {
+    "settlements:settlement_traits/lumber": 0.6
+  },
+  "minimum_rank": "FLAVOR",
+  "footprint_min_width": 5,
+  "footprint_max_width": 7,
+  "footprint_min_depth": 5,
+  "footprint_max_depth": 7,
+  "npc_profession": null,
+  "npc_count": 0
+}

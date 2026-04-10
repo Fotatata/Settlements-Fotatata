@@ -1,0 +1,7 @@
+{
+  "biome": "minecraft:river",
+  "resource_densities": {
+    "FRESHWATER": 1.0
+  },
+  "water_type": "RIVER"
+}

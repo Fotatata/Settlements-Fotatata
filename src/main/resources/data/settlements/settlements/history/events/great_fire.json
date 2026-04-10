@@ -1,0 +1,27 @@
+{
+  "id": "settlements:settlement_events/great_fire",
+  "category": "disaster",
+  "time_horizon_min": 200,
+  "time_horizon_max": 299,
+  "exclusive_tags": [],
+  "probability_weight": 1.0,
+  "preconditions": {
+    "min_trait_weights": {
+      "settlements:settlement_traits/lumber": 0.3
+    },
+    "required_resource_tags": [],
+    "required_water_features": [],
+    "min_population": 0
+  },
+  "trait_modifiers": {
+    "settlements:settlement_traits/lumber": -0.2,
+    "settlements:settlement_traits/defense": 0.15,
+    "settlements:settlement_traits/craft": 0.1
+  },
+  "visual_markers": [
+    "charred_ruins",
+    "stone_rebuilds",
+    "fire_memorial"
+  ],
+  "narrative_text": "A devastating blaze reshaped the settlement and how it rebuilt."
+}

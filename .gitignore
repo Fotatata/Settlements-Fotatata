@@ -28,6 +28,7 @@ repo
 
 # Python
 .venv/
+**/__pycache__/
 
 # Generated files
 src/generated/

@@ -1,0 +1,8 @@
+{
+  "id": "settlements:settlement_traits/trade",
+  "display_info": {
+    "display_name": "Trade",
+    "description": "Markets, exchange, and passing travelers bring prosperity.",
+    "icon_item_id": "minecraft:emerald"
+  }
+}

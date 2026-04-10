@@ -1,0 +1,18 @@
+{
+  "trait": "settlements:settlement_traits/fishing",
+  "base_score": 0.0,
+  "resource_tag_weights": {
+    "FRESHWATER": 0.2,
+    "COASTAL": 0.2
+  },
+  "required_tags": [],
+  "veto_tags": [],
+  "water_feature_weights": {
+    "RIVER": 0.3,
+    "OCEAN": 0.4,
+    "LAKE": 0.25
+  },
+  "biome_weights": {},
+  "elevation_delta_weight": 0.0,
+  "elevation_delta_normalization": 0.0
+}

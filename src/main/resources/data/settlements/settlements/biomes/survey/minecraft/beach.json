@@ -1,0 +1,7 @@
+{
+  "biome": "minecraft:beach",
+  "resource_densities": {
+    "COASTAL": 0.5
+  },
+  "water_type": "OCEAN"
+}
